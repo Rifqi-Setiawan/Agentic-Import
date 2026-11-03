@@ -31,8 +31,14 @@ echo "--> [3/4] Running Protected Acceptance Test Suite (A01-A18)..."
 PYTHONPATH="${PROJECT_ROOT}" "${PROJECT_ROOT}/.venv/bin/pytest" tests/test_acceptance_protected.py -v
 
 # 4. Full Integration Tests Execution
-echo "--> [4/4] Running Full Test Suite..."
+echo "--> [4/5] Running Full Test Suite..."
 PYTHONPATH="${PROJECT_ROOT}" "${PROJECT_ROOT}/.venv/bin/pytest" tests/ -v
+
+# 5. Frontend Build Verification
+echo "--> [5/5] Checking Frontend TypeScript & Production Build..."
+if [ -d "${PROJECT_ROOT}/frontend" ]; then
+    (cd "${PROJECT_ROOT}/frontend" && npm run build)
+fi
 
 echo "============================================================"
 echo "ALL VERIFICATION CHECKS PASSED (100% GREEN)"

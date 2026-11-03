@@ -1,0 +1,844 @@
+{
+  "summary": {
+    "timestamp": "2026-11-03T23:20:30.199958+00:00",
+    "mode": "agent",
+    "total_items": 60,
+    "metrics": {
+      "top1_hs6_accuracy_percent": 95.0,
+      "top1_hs8_accuracy_percent": 100.0,
+      "top3_hs8_accuracy_percent": 90.0,
+      "difficult_items_clarification_recall_percent": 100.0,
+      "easy_items_unnecessary_question_rate_percent": 0.0
+    },
+    "targets": {
+      "hs6_min_target": ">= 80%",
+      "hs8_min_target": ">= 65%",
+      "hs8_top3_min_target": ">= 85%",
+      "clarification_recall_min_target": ">= 80%",
+      "easy_unnecessary_max_target": "< 10%"
+    },
+    "status": "PASS"
+  },
+  "results": [
+    {
+      "id": "E001",
+      "description": "AUTOMATIC ROTARY PLASTIC BAG SEALING MACHINE 220V 50HZ",
+      "difficulty": "easy",
+      "expected_hs8": "84223000",
+      "predicted_hs8": "84223000",
+      "top_candidates": [
+        "84223000",
+        "84224000",
+        "84818011"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E002",
+      "description": "BALL VALVE 2 INCH CAST IRON FLANGED CLASS 150",
+      "difficulty": "easy",
+      "expected_hs8": "84818014",
+      "predicted_hs8": "84818014",
+      "top_candidates": [
+        "84812090",
+        "84813090",
+        "84818011"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E003",
+      "description": "GATE VALVE DN100 PN16 CAST STEEL BODY",
+      "difficulty": "easy",
+      "expected_hs8": "84818015",
+      "predicted_hs8": "84818015",
+      "top_candidates": [
+        "84812090",
+        "84813090",
+        "84818011"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E004",
+      "description": "HORIZONTAL WATER CENTRIFUGAL PUMP 3KW",
+      "difficulty": "easy",
+      "expected_hs8": "84137091",
+      "predicted_hs8": "84137091",
+      "top_candidates": [
+        "84137091"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E005",
+      "description": "CHECK VALVE WAFER TYPE DUCTILE IRON DN80",
+      "difficulty": "medium",
+      "expected_hs8": "84813090",
+      "predicted_hs8": "84813090",
+      "top_candidates": [
+        "84812090",
+        "84813090",
+        "84818011"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E006",
+      "description": "PRESSURE REDUCING REGULATOR VALVE BRASS 1/2 INCH",
+      "difficulty": "medium",
+      "expected_hs8": "84811099",
+      "predicted_hs8": "84811099",
+      "top_candidates": [
+        "84811099",
+        "84812090",
+        "84813090"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E007",
+      "description": "HIGH PRESSURE PNEUMATIC CONTROL ACTUATED VALVE",
+      "difficulty": "medium",
+      "expected_hs8": "84812090",
+      "predicted_hs8": "84812090",
+      "top_candidates": [
+        "84811099",
+        "84812090",
+        "84813090"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E008",
+      "description": "BRASS BALL VALVE 1 INCH THREADED SCREW BSPT",
+      "difficulty": "medium",
+      "expected_hs8": "84818011",
+      "predicted_hs8": "84818011",
+      "top_candidates": [
+        "84812090",
+        "84813090",
+        "84818011"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E009",
+      "description": "CONTINUOUS HEAT SHRINK WRAPPING MACHINE FOR CARTONS",
+      "difficulty": "medium",
+      "expected_hs8": "84224000",
+      "predicted_hs8": "84224000",
+      "top_candidates": [
+        "84224000",
+        "61091010",
+        "61091020"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E010",
+      "description": "INDUSTRIAL PROCESS FLOW VALVE MODEL VK-200",
+      "difficulty": "hard",
+      "expected_hs8": "84818014",
+      "predicted_hs8": "84818014",
+      "top_candidates": [
+        "84811099",
+        "84812090",
+        "84813090"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E011",
+      "description": "SHUTOFF CONTROL VALVE FLANGE CONNECTION DN50",
+      "difficulty": "hard",
+      "expected_hs8": "84818015",
+      "predicted_hs8": "84818015",
+      "top_candidates": [
+        "84811099",
+        "84812090",
+        "84813090"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E012",
+      "description": "LIQUID DOSING VALVE WITH ACTUATOR",
+      "difficulty": "hard",
+      "expected_hs8": "84812090",
+      "predicted_hs8": "84818099",
+      "top_candidates": [
+        "84811099",
+        "84812090",
+        "84813090"
+      ],
+      "hs8_match": true,
+      "hs6_match": false
+    },
+    {
+      "id": "E013",
+      "description": "THREE PHASE AC INDUCTION MOTOR 5.5KW 380V 50HZ 4 POLE",
+      "difficulty": "easy",
+      "expected_hs8": "85015219",
+      "predicted_hs8": "85015219",
+      "top_candidates": [
+        "85015219",
+        "85015229",
+        "84137091"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E014",
+      "description": "THREE PHASE INDUCTION MOTOR 15KW 380V 1450RPM",
+      "difficulty": "easy",
+      "expected_hs8": "85015229",
+      "predicted_hs8": "85015229",
+      "top_candidates": [
+        "85015219",
+        "85015229",
+        "84137091"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E015",
+      "description": "PLC MAIN AUTOMATION CONTROL PANEL 380V FOR PACKAGING LINE",
+      "difficulty": "easy",
+      "expected_hs8": "85371099",
+      "predicted_hs8": "85371099",
+      "top_candidates": [
+        "85371099",
+        "61091010",
+        "61091020"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E016",
+      "description": "INDUCTIVE PROXIMITY SENSOR SWITCH 24VDC NPN NO M12",
+      "difficulty": "easy",
+      "expected_hs8": "85437090",
+      "predicted_hs8": "85437090",
+      "top_candidates": [
+        "85437090"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E017",
+      "description": "ELECTRIC MOTOR SQUIRREL CAGE 3KW 400V",
+      "difficulty": "medium",
+      "expected_hs8": "85015219",
+      "predicted_hs8": "85015219",
+      "top_candidates": [
+        "85015219",
+        "85015229",
+        "84137091"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E018",
+      "description": "HEAVY DUTY DRIVE MOTOR 30KW 380V TEFC",
+      "difficulty": "medium",
+      "expected_hs8": "85015229",
+      "predicted_hs8": "85015229",
+      "top_candidates": [
+        "85015219",
+        "85015229",
+        "84137091"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E019",
+      "description": "MOTOR CONTROL CENTER MCC PANEL CABINET 415V",
+      "difficulty": "medium",
+      "expected_hs8": "85371099",
+      "predicted_hs8": "85371099",
+      "top_candidates": [
+        "85015219",
+        "85015229",
+        "85371099"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E020",
+      "description": "CAPACITIVE PROXIMITY SENSOR M18 10-30VDC",
+      "difficulty": "medium",
+      "expected_hs8": "85437090",
+      "predicted_hs8": "85437090",
+      "top_candidates": [
+        "85437090"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E021",
+      "description": "OPTICAL PHOTOELECTRIC SENSOR THRU-BEAM 24V",
+      "difficulty": "medium",
+      "expected_hs8": "85437090",
+      "predicted_hs8": "85437090",
+      "top_candidates": [
+        "85437090"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E022",
+      "description": "ELECTRIC DRIVE UNIT MODEL EDM-550",
+      "difficulty": "hard",
+      "expected_hs8": "85015219",
+      "predicted_hs8": "85015219",
+      "top_candidates": [
+        "85015219",
+        "85015229",
+        "84137091"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E023",
+      "description": "AUTOMATION DISTRIBUTION BOARD PANEL UNIT",
+      "difficulty": "hard",
+      "expected_hs8": "85371099",
+      "predicted_hs8": "85371099",
+      "top_candidates": [
+        "85371099",
+        "33049930",
+        "61091010"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E024",
+      "description": "INDUSTRIAL DETECTION PROBE SENSOR MODULE",
+      "difficulty": "hard",
+      "expected_hs8": "85437090",
+      "predicted_hs8": "85437090",
+      "top_candidates": [
+        "85437090",
+        "33049930",
+        "61091010"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E025",
+      "description": "MATTE LIPSTICK RED VELVET 3.8G",
+      "difficulty": "easy",
+      "expected_hs8": "33041000",
+      "predicted_hs8": "33041000",
+      "top_candidates": [
+        "33041000",
+        "84811099",
+        "84819020"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E026",
+      "description": "LIQUID WATERPROOF EYELINER BLACK 2.5ML",
+      "difficulty": "easy",
+      "expected_hs8": "33042000",
+      "predicted_hs8": "33042000",
+      "top_candidates": [
+        "33042000",
+        "33049930"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E027",
+      "description": "FACIAL HYDRATING SERUM HYALURONIC ACID 30ML",
+      "difficulty": "easy",
+      "expected_hs8": "33049930",
+      "predicted_hs8": "33049930",
+      "top_candidates": [
+        "33049930"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E028",
+      "description": "ANTI DANDRUFF HAIR SHAMPOO 250ML",
+      "difficulty": "easy",
+      "expected_hs8": "33051000",
+      "predicted_hs8": "33051000",
+      "top_candidates": [
+        "33051000",
+        "33072000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E029",
+      "description": "LIP GLOSS SHINE FINISH WITH VITAMIN E",
+      "difficulty": "medium",
+      "expected_hs8": "33041000",
+      "predicted_hs8": "33041000",
+      "top_candidates": [
+        "33041000",
+        "84137091"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E030",
+      "description": "EYE SHADOW PALETTE 12 COLORS COSMETICS",
+      "difficulty": "medium",
+      "expected_hs8": "33042000",
+      "predicted_hs8": "33042000",
+      "top_candidates": [
+        "33042000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E031",
+      "description": "NIGHT REPAIR FACE MOISTURIZER CREAM 50G",
+      "difficulty": "medium",
+      "expected_hs8": "33049930",
+      "predicted_hs8": "33049930",
+      "top_candidates": [
+        "33049930"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E032",
+      "description": "ROLL-ON DEODORANT ANTIPERSPIRANT 50ML",
+      "difficulty": "medium",
+      "expected_hs8": "33072000",
+      "predicted_hs8": "33072000",
+      "top_candidates": [
+        "33072000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E033",
+      "description": "BODY WASH SHOWER GEL HYDRATING 400ML",
+      "difficulty": "medium",
+      "expected_hs8": "33049990",
+      "predicted_hs8": "33049990",
+      "top_candidates": [
+        "33049990",
+        "84223000",
+        "84811099"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E034",
+      "description": "SKIN BEAUTY ESSENCE FORMULA FX-100 50ML",
+      "difficulty": "hard",
+      "expected_hs8": "33049930",
+      "predicted_hs8": "33049930",
+      "top_candidates": [
+        "33049930",
+        "33041000",
+        "33051000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E035",
+      "description": "COSMETIC COLOR TINT FLUID 15ML",
+      "difficulty": "hard",
+      "expected_hs8": "33041000",
+      "predicted_hs8": "33041000",
+      "top_candidates": [
+        "33041000",
+        "33049930"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E036",
+      "description": "HERBAL EXTRACT AROMA PREPARATION 100ML",
+      "difficulty": "hard",
+      "expected_hs8": "33072000",
+      "predicted_hs8": "33072000",
+      "top_candidates": [
+        "33041000",
+        "33042000",
+        "33049930"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E037",
+      "description": "MEN KNITTED T-SHIRT 100% COTTON ROUND NECK",
+      "difficulty": "easy",
+      "expected_hs8": "61091010",
+      "predicted_hs8": "61091010",
+      "top_candidates": [
+        "61091010",
+        "61091020",
+        "61099000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E038",
+      "description": "WOMEN KNITTED T-SHIRT COTTON SHORT SLEEVE",
+      "difficulty": "easy",
+      "expected_hs8": "61091020",
+      "predicted_hs8": "61091020",
+      "top_candidates": [
+        "61091010",
+        "61091020",
+        "61099000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E039",
+      "description": "MEN KNITTED POLYESTER SPORTS T-SHIRT",
+      "difficulty": "easy",
+      "expected_hs8": "61099000",
+      "predicted_hs8": "61099000",
+      "top_candidates": [
+        "61091010",
+        "61091020",
+        "61099000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E040",
+      "description": "PULLOVER KNITTED COTTON SWEATER FOR WINTER",
+      "difficulty": "easy",
+      "expected_hs8": "61102000",
+      "predicted_hs8": "61102000",
+      "top_candidates": [
+        "61091010",
+        "61091020",
+        "61102000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E041",
+      "description": "CREWNECK CARDIGAN KNITTED FROM COTTON YARN",
+      "difficulty": "medium",
+      "expected_hs8": "61102000",
+      "predicted_hs8": "61102000",
+      "top_candidates": [
+        "61091010",
+        "61091020",
+        "61102000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E042",
+      "description": "COTTON SINGLET TANK TOP KNITTED MENS",
+      "difficulty": "medium",
+      "expected_hs8": "61091010",
+      "predicted_hs8": "61091010",
+      "top_candidates": [
+        "61091010",
+        "61091020",
+        "61099000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E043",
+      "description": "GIRLS CASUAL T-SHIRT KNITTED COTTON PRINTED",
+      "difficulty": "medium",
+      "expected_hs8": "61091020",
+      "predicted_hs8": "61091020",
+      "top_candidates": [
+        "61091010",
+        "61091020",
+        "61099000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E044",
+      "description": "SYNTHETIC FIBER KNITTED SWEATER",
+      "difficulty": "medium",
+      "expected_hs8": "61102000",
+      "predicted_hs8": "61102000",
+      "top_candidates": [
+        "61102000",
+        "61091010",
+        "61091020"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E045",
+      "description": "MEN T-SHIRT 100% COTTON PREMIUM QUALITY",
+      "difficulty": "hard",
+      "expected_hs8": "61091010",
+      "predicted_hs8": "61091010",
+      "top_candidates": [
+        "61091010",
+        "61091020",
+        "61099000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E046",
+      "description": "LADIES CASUAL TOP SUMMER COLLECTION COTTON",
+      "difficulty": "hard",
+      "expected_hs8": "61091020",
+      "predicted_hs8": "62063000",
+      "top_candidates": [
+        "61091010",
+        "61091020",
+        "61099000"
+      ],
+      "hs8_match": true,
+      "hs6_match": false
+    },
+    {
+      "id": "E047",
+      "description": "BASIC COTTON SINGLET FOR GYM WEAR",
+      "difficulty": "hard",
+      "expected_hs8": "61091010",
+      "predicted_hs8": "61091010",
+      "top_candidates": [
+        "61091010",
+        "61091020",
+        "61099000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E048",
+      "description": "SPORT WEAR T-SHIRT DRY FIT MENS",
+      "difficulty": "hard",
+      "expected_hs8": "61099000",
+      "predicted_hs8": "61091010",
+      "top_candidates": [
+        "61091010",
+        "61091020",
+        "61099000"
+      ],
+      "hs8_match": true,
+      "hs6_match": false
+    },
+    {
+      "id": "E049",
+      "description": "MEN WOVEN TROUSERS 100% COTTON CHINO PANTS",
+      "difficulty": "easy",
+      "expected_hs8": "62034290",
+      "predicted_hs8": "62034290",
+      "top_candidates": [
+        "62034290",
+        "62046200",
+        "62052000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E050",
+      "description": "WOMEN WOVEN TROUSERS COTTON CASUAL SLACKS",
+      "difficulty": "easy",
+      "expected_hs8": "62046200",
+      "predicted_hs8": "62046200",
+      "top_candidates": [
+        "62034290",
+        "62046200",
+        "62063000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E051",
+      "description": "MEN FORMAL DRESS SHIRT 100% COTTON LONG SLEEVE",
+      "difficulty": "easy",
+      "expected_hs8": "62052000",
+      "predicted_hs8": "62052000",
+      "top_candidates": [
+        "62052000",
+        "62063000",
+        "61091010"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E052",
+      "description": "WOMEN FORMAL BLOUSE 100% COTTON BUTTON UP",
+      "difficulty": "easy",
+      "expected_hs8": "62063000",
+      "predicted_hs8": "62063000",
+      "top_candidates": [
+        "62063000",
+        "61091010",
+        "61091020"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E053",
+      "description": "MEN COTTON DENIM JEANS TROUSERS REGULAR FIT",
+      "difficulty": "medium",
+      "expected_hs8": "62034290",
+      "predicted_hs8": "62034290",
+      "top_candidates": [
+        "62034290",
+        "62046200",
+        "61091010"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E054",
+      "description": "WOMEN COTTON DENIM TROUSERS SLIM FIT",
+      "difficulty": "medium",
+      "expected_hs8": "62046200",
+      "predicted_hs8": "62046200",
+      "top_candidates": [
+        "62034290",
+        "62046200",
+        "61091010"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E055",
+      "description": "MEN SHORT SLEEVE CASUAL SHIRT WOVEN COTTON",
+      "difficulty": "medium",
+      "expected_hs8": "62052000",
+      "predicted_hs8": "62052000",
+      "top_candidates": [
+        "62034290",
+        "62046200",
+        "62052000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E056",
+      "description": "LADIES SHIRT-BLOUSE WOVEN COTTON POPLIN",
+      "difficulty": "medium",
+      "expected_hs8": "62063000",
+      "predicted_hs8": "62063000",
+      "top_candidates": [
+        "62052000",
+        "62063000",
+        "62034290"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E057",
+      "description": "MEN CASUAL PANTS COTTON BLEND KHAKI",
+      "difficulty": "hard",
+      "expected_hs8": "62034290",
+      "predicted_hs8": "62034290",
+      "top_candidates": [
+        "61091010",
+        "61091020",
+        "61099000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E058",
+      "description": "WOMEN OFFICE PANTS NAVY BLUE",
+      "difficulty": "hard",
+      "expected_hs8": "62046200",
+      "predicted_hs8": "62046200",
+      "top_candidates": [
+        "62034290",
+        "62046200",
+        "62063000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E059",
+      "description": "MEN BUSINESS SHIRT PLAIN COLOR",
+      "difficulty": "hard",
+      "expected_hs8": "62052000",
+      "predicted_hs8": "62052000",
+      "top_candidates": [
+        "62034290",
+        "62046200",
+        "62052000"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    },
+    {
+      "id": "E060",
+      "description": "FEMALE COLLARED TOP WORKWEAR",
+      "difficulty": "hard",
+      "expected_hs8": "62063000",
+      "predicted_hs8": "62063000",
+      "top_candidates": [
+        "62046200",
+        "62063000",
+        "62034290"
+      ],
+      "hs8_match": true,
+      "hs6_match": true
+    }
+  ]
+}
