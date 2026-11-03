@@ -57,31 +57,31 @@ def seed_data(db: Session = None):
                 )
                 db.add(u)
 
-        # 3. Official HS Codes (Chapters 33, 61, 62, 84, 85)
-        hs_list = [
-            ("8422.30.00", "Mesin pembungkus dan sealing karton otomatis", "Automatic carton sealing & wrapping machine", 5.0, 11.0, 2.5, "verified_rules"),
-            ("8501.52.19", "Motor induksi AC multi-fase output > 750W", "Multi-phase AC induction motor output > 750W", 5.0, 11.0, 2.5, "verified_rules"),
-            ("8537.10.19", "Papan kontrol dan PLC panel untuk voltase <= 1000V", "Control panel and PLC boards for voltage <= 1000V", 0.0, 11.0, 2.5, "verified_none"),
-            ("8481.80.90", "Katup pneumatic control valve & keran lainnya", "Pneumatic control valves and other taps/cocks", 5.0, 11.0, 2.5, "verified_rules"),
-            ("8543.70.90", "Sensor jarak inductive proximity switch industri", "Inductive proximity switch industrial sensor", 0.0, 11.0, 2.5, "verified_none"),
-            ("3304.99.30", "Kosmetik sediaan perawatan kulit emulsi pelembab", "Cosmetics skin care preparations moisturizing emulsion", 10.0, 11.0, 2.5, "verified_rules"),
-            ("6109.10.10", "Kaos T-shirt rajutan bahan katun pria/wanita", "T-shirts knitted or crocheted of cotton", 15.0, 11.0, 2.5, "verified_rules"),
-            ("6203.42.00", "Celana panjang pria bukan rajutan bahan katun", "Men trousers not knitted or crocheted of cotton", 15.0, 11.0, 2.5, "verified_rules"),
-        ]
-        for hs, desc_id, desc_en, bm, ppn, pph, lartas in hs_list:
-            h = db.query(HSCode).filter_by(hs_code=hs).first()
-            if not h:
-                h = HSCode(
-                    hs_code=hs,
-                    description_id=desc_id,
-                    description_en=desc_en,
-                    bm_rate=bm,
-                    ppn_rate=ppn,
-                    pph_rate=pph,
-                    lartas_coverage=lartas,
-                    source="BTKI 2022 Official",
-                )
-                db.add(h)
+        # 3. Official HS Codes (Chapters 33, 61, 62, 84, 85 from data/seed/hs_codes.csv)
+        import csv
+        import os
+        hs_csv = "/srv/hermes-control/services/agentic-import/data/seed/hs_codes.csv"
+        if os.path.exists(hs_csv):
+            with open(hs_csv, mode="r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for r in reader:
+                    code_raw = r["code"].strip()
+                    # Format as dotted e.g. 8481.80.99
+                    code_dotted = f"{code_raw[:4]}.{code_raw[4:6]}.{code_raw[6:]}" if len(code_raw) == 8 else code_raw
+                    for hs_variant in [code_raw, code_dotted]:
+                        h = db.query(HSCode).filter_by(hs_code=hs_variant).first()
+                        if not h:
+                            h = HSCode(
+                                hs_code=hs_variant,
+                                description_id=f"Bab {r['chapter']} | Pos {r['heading']} | {r['description_raw']}",
+                                description_en=r.get("description_en") or r["description_raw"],
+                                bm_rate=float(r["bm_rate"]),
+                                ppn_rate=11.0,
+                                pph_rate=2.5,
+                                lartas_coverage="verified_rules" if r["chapter"] in ("33", "84", "85", "61", "62") else "verified_none",
+                                source="BTKI 2022 Official PMK 26/PMK.010/2022",
+                            )
+                            db.add(h)
 
         # 4. Lartas Rules (Official INSW)
         lartas_list = [
