@@ -35,6 +35,8 @@ venv.bak/
 # Logs & Storage Vault
 logs/
 data/vault/
+data/raw/
+data/uploads/
 *.log
 
 # Pytest / Mypy / Ruff
