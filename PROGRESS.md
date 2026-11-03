@@ -5,7 +5,7 @@ Spesifikasi Kanonikal: `docs/MVP-v1.1.md`
 Tier: MVP
 Status: In Progress (Task Native: `t_ddc4a7f8`)
 Baseline Commit: `0fe405c` (Baseline specification and protected acceptance criteria)
-Current Candidate: `ccf15c2` (Core domain, FastAPI endpoints, LangGraph worker, and Indonesian UI)
+Current Candidate: `e303da6` (Candidate ready for independent Sentinel review)
 
 ## Ringkasan Progres & Bukti Aktual
 - [x] Inisialisasi repositori Git (`main`) terhubung ke `https://github.com/Rifqi-Setiawan/Agentic-Import.git` (baseline `0fe405c`).
@@ -29,13 +29,18 @@ Current Candidate: `ccf15c2` (Core domain, FastAPI endpoints, LangGraph worker, 
 - [x] Implementasi Worker Ingestion, Job Dispatcher (10s debounce, single active run guarantee), Watcher Regulasi, dan Outbox SMTP (`src/worker/`).
 - [x] Implementasi FastAPI Endpoints (`/api/v1/auth`, `shipments`, `clarifications`, `reviews`, `regulations`, `hs-codes`, `admin`, `sse`, `health`).
 - [x] Implementasi Next.js/Vite Indonesian UI Dashboard (`frontend/src/App.tsx`, `api.ts`, Tailwind CSS, wizard, detail per barang, review drawer, SSE live streaming, demo reset).
+- [x] Konfigurasi reverse proxy preview frontend ke backend API loopback port 8120 dan aktivasi layanan `imporjaga-frontend.service` di port 3060.
 - [x] Eksekusi Pengujian Acceptance Terproteksi A01-A18 & Script Kanonikal `scripts/verify.sh` (23/23 tests passing 100% green, Ruff clean, Frontend build passing).
 - [x] Evaluasi 60-item frozen dataset (`reports/eval_report_agent.json` & `reports/eval_report_retrieval_only.json`):
   - Agent Mode: Top-1 HS6 95.0%, Top-1 HS8 100.0%, Top-3 HS8 90.0%, Clarification Recall 100.0%, Unnecessary Questions 0.0% (Status: PASS).
   - Retrieval-Only Baseline: Top-1 HS6 63.3%, Top-1 HS8 56.7%, Top-3 HS8 90.0% (Membuktikan keunggulan agen).
-- [x] Pengaturan kartu implementasi Kanban mode-goal untuk `forge` (`t_ddc4a7f8`) dengan kontrak verifikasi kanonikal `bash scripts/verify.sh`.
+- [x] UI walkthrough di browser pada `http://127.0.0.1:3060` terhubung langsung ke API backend `8120`.
 - [ ] Review Independen Sentinel & Verifikasi Milestone.
 - [ ] Publikasi GitHub oleh Relay ke `https://github.com/Rifqi-Setiawan/Agentic-Import.git`.
+
+## Berikutnya
+1. Serahkan kandidat ke Sentinel untuk review independen via `kanban_request_review(reviewer='sentinel')`.
+2. Setelah Sentinel verifikasi PASS, Relay mempublikasikan branch `main` ke remote repository GitHub.
 
 ## Registrasi Kartu Kanban
 - Task ID: `t_ddc4a7f8`
