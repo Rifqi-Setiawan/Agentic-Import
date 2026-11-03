@@ -56,7 +56,7 @@ def ingest():
             reg_map = {}
             reg_path = "data/seed/regulations.csv"
             if os.path.exists(reg_path):
-                with open(reg_path, mode="r", encoding="utf-8") as f:
+                with open(reg_path, encoding="utf-8") as f:
                     reader = csv.DictReader(f)
                     for r in reader:
                         cur.execute("SELECT id FROM regulations WHERE number = %s;", (r["number"],))
@@ -75,7 +75,7 @@ def ingest():
             # 4. Exchange Rates
             ex_path = "data/seed/exchange_rates.csv"
             if os.path.exists(ex_path):
-                with open(ex_path, mode="r", encoding="utf-8") as f:
+                with open(ex_path, encoding="utf-8") as f:
                     reader = csv.DictReader(f)
                     for r in reader:
                         cur.execute("SELECT id FROM exchange_rates WHERE currency = %s AND valid_from = %s;", (r["currency"], r["valid_from"]))
@@ -90,7 +90,7 @@ def ingest():
             hs_count = 0
             hs_path = "data/seed/hs_codes.csv"
             if os.path.exists(hs_path):
-                with open(hs_path, mode="r", encoding="utf-8") as f:
+                with open(hs_path, encoding="utf-8") as f:
                     reader = csv.DictReader(f)
                     for r in reader:
                         cur.execute("SELECT id FROM hs_codes WHERE code = %s;", (r["code"],))
@@ -112,7 +112,7 @@ def ingest():
             lartas_count = 0
             lartas_path = "data/seed/lartas_rules.csv"
             if os.path.exists(lartas_path):
-                with open(lartas_path, mode="r", encoding="utf-8") as f:
+                with open(lartas_path, encoding="utf-8") as f:
                     reader = csv.DictReader(f)
                     for r in reader:
                         reg_id = reg_map.get(r["regulation_number"], 1)
@@ -134,7 +134,7 @@ def ingest():
             pph_count = 0
             pph_path = "data/seed/pph22_lampiran.csv"
             if os.path.exists(pph_path):
-                with open(pph_path, mode="r", encoding="utf-8") as f:
+                with open(pph_path, encoding="utf-8") as f:
                     reader = csv.DictReader(f)
                     for r in reader:
                         cur.execute("SELECT id FROM pph22_rates WHERE hs_code = %s;", (r["hs_code"],))
@@ -170,7 +170,7 @@ def ingest():
                 (4, "Pneumatic Control Valve Actuator (Katup Ambigu)", 4, 180.0, "84818090", 0.65, "medium", "needs_clarification"),
                 (5, "Inductive Proximity Sensor Switch NPN NO M12", 20, 15.0, "85437090", 0.88, "low", "classified"),
             ]
-            for l_no, desc, qty, price, hs, conf, risk, st in items:
+            for l_no, desc, qty, price, hs, conf, _risk, st in items:
                 it_id = str(uuid.uuid4())
                 cur.execute("""
                     INSERT INTO shipment_items (id, shipment_id, company_id, line_no, description_raw,
