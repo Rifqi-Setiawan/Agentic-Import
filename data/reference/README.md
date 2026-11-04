@@ -41,10 +41,19 @@
   - 1 Representative Preview PNG (`preview.png`)
 
 ## 4. Additive Importer CLI (`scripts/import_reference_catalog.py`)
-- **Safety**:
-  - Test database guard enforces `current_database() == 'imporjaga_test'`.
-  - Live deployment guard enforces `--live --apply` flags and verifies `current_database() == 'imporjaga'`.
-  - Additive & idempotent: preserves reviewer human edits, skips existing scenarios, never deletes human classification memory.
+- **Safety & Database Guards**:
+  - Test database guard strictly enforces `current_database() == 'imporjaga_test'`.
+  - Live deployment guard requires explicit `--live --apply` flags and verifies `current_database() == 'imporjaga'` (Parent authorized operator only; worker never runs live mode).
+- **Additive & Idempotent Contract**:
+  - Preserves reviewer human modifications and decisions on existing shipment scenarios.
+  - Skips existing shipment scenarios; never creates duplicate records or duplicate AI pipeline runs.
+  - Never deletes rows from `hs_codes`, `shipment_items`, `documents`, `checklist_items`, or `classification_memory` (legacy codes remain archived/unservable via catalog guard).
+- **Legacy Global Lartas Rules Archival**:
+  - Automatically retags and archives known unverified legacy global placeholder rules (`company_id IS NULL AND source = 'INSW Official Regulatory Database'`).
+  - Sets `is_active = false` and updates source to `'Legacy Seed (Archived Placeholder)'`.
+  - Preserves complete row history without DELETE.
+  - Company-specific simulation rules (`company_id IS NOT NULL`, e.g. `source = 'Simulasi Demo'`) and all unrelated tenant data remain active and intact.
+  - Real JDIH regulations library (`regulations.json`) remains decoupled as reference-only documentation (`reference_only: true`), preventing unverified global requirements from posing as active INSW permits.
 
 ### CLI Usage Commands
 ```bash

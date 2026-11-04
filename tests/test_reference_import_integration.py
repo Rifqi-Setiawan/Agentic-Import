@@ -78,6 +78,40 @@ def test_additive_twice_import_preserves_modified_seed_and_unrelated_company():
             """, (comp_a_id,))
             mem_id = cur.fetchone()[0]
 
+            # 4b. Setup lartas rules: legacy global unverified placeholder vs company-specific rules
+            cur.execute("""
+                INSERT INTO lartas_rules (
+                    company_id, hs_prefix, requirement_key, permit_name, issuing_agency, rule_group, is_active, effective_date, source
+                )
+                VALUES (
+                    NULL, '8481', 'TEST_GLOBAL_LEGACY_REQ', 'Persetujuan Impor Besi Baja Test', 'Kemendag', 'PI_STEEL_TEST', true, NOW(), 'INSW Official Regulatory Database'
+                )
+                RETURNING id;
+            """)
+            test_legacy_lartas_id = cur.fetchone()[0]
+
+            cur.execute("""
+                INSERT INTO lartas_rules (
+                    company_id, hs_prefix, requirement_key, permit_name, issuing_agency, rule_group, is_active, effective_date, source
+                )
+                VALUES (
+                    %s, '8481', 'TEST_CO_A_SIMULASI', 'Simulasi Khusus Co A', 'Kemendag', 'SIM_A', true, NOW(), 'Simulasi Demo'
+                )
+                RETURNING id;
+            """, (comp_a_id,))
+            test_co_a_lartas_id = cur.fetchone()[0]
+
+            cur.execute("""
+                INSERT INTO lartas_rules (
+                    company_id, hs_prefix, requirement_key, permit_name, issuing_agency, rule_group, is_active, effective_date, source
+                )
+                VALUES (
+                    %s, '8422', 'TEST_CO_B_CUSTOM', 'Aturan Khusus Co B', 'Internal B', 'CUSTOM_B', true, NOW(), 'Aturan Internal B'
+                )
+                RETURNING id;
+            """, (comp_b_id,))
+            test_co_b_lartas_id = cur.fetchone()[0]
+
         conn.commit()
 
         try:
@@ -201,9 +235,41 @@ def test_additive_twice_import_preserves_modified_seed_and_unrelated_company():
                 assert mem_row[2] == "33012910"
                 assert "Archived legacy human decision note" in mem_row[3]
 
+                # 12. VERIFY: Legacy global lartas rules are archived, company-specific rules stay active
+                cur.execute("""
+                    SELECT is_active, source
+                    FROM lartas_rules
+                    WHERE id = %s;
+                """, (test_legacy_lartas_id,))
+                leg_row = cur.fetchone()
+                assert leg_row is not None
+                assert leg_row[0] is False, f"Expected legacy global rule to be archived (is_active=False), got {leg_row[0]}"
+                assert leg_row[1] == "Legacy Seed (Archived Placeholder)", f"Expected retagged source, got {leg_row[1]}"
+
+                cur.execute("""
+                    SELECT COUNT(*)
+                    FROM lartas_rules
+                    WHERE company_id IS NULL
+                      AND source = 'INSW Official Regulatory Database'
+                      AND is_active = true;
+                """)
+                active_legacy_count = cur.fetchone()[0]
+                assert active_legacy_count == 0, f"Found {active_legacy_count} active unretagged legacy global lartas rules!"
+
+                cur.execute("SELECT is_active, source FROM lartas_rules WHERE id = %s;", (test_co_a_lartas_id,))
+                co_a_rule = cur.fetchone()
+                assert co_a_rule[0] is True
+                assert co_a_rule[1] == "Simulasi Demo"
+
+                cur.execute("SELECT is_active, source FROM lartas_rules WHERE id = %s;", (test_co_b_lartas_id,))
+                co_b_rule = cur.fetchone()
+                assert co_b_rule[0] is True
+                assert co_b_rule[1] == "Aturan Internal B"
+
         finally:
             # Clean up isolated test company records to leave database clean
             with conn.cursor() as cur:
+                cur.execute("DELETE FROM lartas_rules WHERE id IN (%s, %s, %s);", (test_legacy_lartas_id, test_co_a_lartas_id, test_co_b_lartas_id))
                 cur.execute("DELETE FROM classification_memory WHERE company_id IN (%s, %s);", (comp_a_id, comp_b_id))
                 cur.execute("DELETE FROM checklist_items WHERE company_id IN (%s, %s);", (comp_a_id, comp_b_id))
                 cur.execute("DELETE FROM documents WHERE company_id IN (%s, %s);", (comp_a_id, comp_b_id))

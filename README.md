@@ -64,4 +64,27 @@ PYTHONPATH=. .venv/bin/python tests/live_pipeline_smoke.py
 
 Suite audit v2 memasang guard dan dependency DB tes. Smoke live secara eksplisit memilih TEST_DATABASE_URL dan membuat fixture baru. Tes integrasi lama belum dijadikan perintah produksi: jangan menjalankan reset/simulate/approve terhadap demo aktif tanpa isolasi.
 
+### Sinkronisasi Katalog Referensi & Fixtures Demo
+
+Data referensi resmi BTKI 2022 (2.614 kode HS dari DJBC), perpustakaan regulasi JDIH Kemenkeu (5 PMK), serta fixtures fiktif realistis (14 kiriman fiktif, 28 item, dan 41 PDF watermarked DEMO di `data/demo/documents/`) disinkronkan secara aditif dan idempoten via `scripts/import_reference_catalog.py`:
+
+```bash
+# 1. Mode Uji / Test Database (default, wajib lolos guard imporjaga_test)
+.venv/bin/python scripts/import_reference_catalog.py --company-id <COMPANY_ID>
+
+# 2. Mode Live Production Apply (HANYA dijalankan oleh operator Parent berwenang setelah verifikasi PASS)
+.venv/bin/python scripts/import_reference_catalog.py --company-id 1 --live --apply
+```
+
+Perintah di atas:
+- Mengarsipkan aturan placeholder lartas global warisan (`company_id IS NULL AND source = 'INSW Official Regulatory Database'`) menjadi `is_active = false` dan `source = 'Legacy Seed (Archived Placeholder)'` tanpa menghapus riwayat baris (tanpa DELETE).
+- Mempertahankan aturan simulasi spesifik perusahaan (`company_id IS NOT NULL`) dan modifikasi reviewer manusia yang sudah ada.
+- Memperbarui deskripsi kode HS resmi dan menandai tarif/lartas yang belum terverifikasi secara jujur (`NULL` / `unknown`).
+
+### Verifikasi Lengkap Kandidat
+
+```bash
+.venv/bin/python -m pytest -p no:cacheprovider tests/test_acceptance_protected.py tests/test_audit_api_regressions.py tests/test_audit_acceptance_v2.py tests/test_review_normalization.py tests/test_detail_readiness.py tests/test_reference_data_acceptance.py tests/test_reference_import_integration.py -q && .venv/bin/ruff check src scripts && /srv/apps/hermes/.local/bin/npm --prefix frontend run build
+```
+
 Sebelum deployment jalankan migrasi, build frontend, verifikasi kandidat dan restart hanya layanan ImporJaga. Backup sebelum remediasi tersedia di direktori backup VPS operator. Bukti audit awal dan perbaikan fixture dipertahankan di docs/.

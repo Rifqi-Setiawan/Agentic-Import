@@ -138,8 +138,8 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                     issuing_agency=agency,
                     rule_group=group,
                     supersedes_rule_id=super_id,
-                    is_active=True,
-                    source="INSW Official Regulatory Database",
+                    is_active=False,
+                    source="Legacy Seed (Archived Placeholder)",
                 )
                 db.add(lr)
 

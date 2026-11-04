@@ -316,7 +316,7 @@ export function Dashboard({
             Mulai dengan invoice contoh, lalu ikuti jejak analisis dan review.
           </p>
         </div>
-        <a href="/data/demo/invoices/INV-MKN-011.pdf" download>
+        <a href="/data/demo/documents/INV-DEMO-MKN-001.pdf" download>
           <ArrowDownToLine size={15} /> Unduh invoice contoh
         </a>
       </section>

@@ -439,10 +439,10 @@ export default function App() {
                   </div>
                 </div>
                 <div className="actions">
-                  <a href="/data/demo/invoices/INV-MKN-011.pdf" download>
+                  <a href="/data/demo/documents/INV-DEMO-MKN-001.pdf" download>
                     Unduh contoh invoice ↗
                   </a>
-                  <a href="/data/demo/invoices/DS-VALVE-011.pdf" download>
+                  <a href="/data/demo/documents/DS-APX-M8422.pdf" download>
                     Unduh datasheet contoh ↗
                   </a>
                 </div>

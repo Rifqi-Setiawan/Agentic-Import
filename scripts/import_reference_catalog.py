@@ -91,7 +91,8 @@ def import_catalog(conn):
     - Reads 2,614 official BTKI 2022 codes.
     - Updates descriptions for canonical and dotted variants.
     - Inserts missing canonical codes with honest unknown rates (NULL).
-    - NO DELETE of hs_codes or classification_memory (legacy codes remain archived/unservable via catalog guard).
+    - Archives/retags unverified legacy global placeholder lartas_rules (company_id IS NULL and source = 'INSW Official Regulatory Database').
+    - NO DELETE of hs_codes, lartas_rules, or classification_memory (legacy codes remain archived/unservable via catalog guard).
     """
     if not CATALOG_FILE.exists():
         raise FileNotFoundError(f"Reference catalog file not found: {CATALOG_FILE}")
@@ -103,6 +104,20 @@ def import_catalog(conn):
     print(f"Loaded {len(codes)} official BTKI 2022 codes from {CATALOG_FILE}")
 
     with conn.cursor() as cur:
+        # 1. Archive/retag legacy global unverified placeholder lartas_rules
+        # ONLY rows with company_id IS NULL and source = 'INSW Official Regulatory Database'
+        # Do NOT delete any rows; preserve full history.
+        cur.execute("""
+            UPDATE lartas_rules
+            SET is_active = false,
+                source = 'Legacy Seed (Archived Placeholder)'
+            WHERE company_id IS NULL
+              AND source = 'INSW Official Regulatory Database';
+        """)
+        archived_lartas = cur.rowcount
+        print(f"Archived {archived_lartas} legacy global placeholder lartas rules (company_id IS NULL).")
+
+        # 2. Sync official BTKI 2022 catalog
         inserted = 0
         updated = 0
 
