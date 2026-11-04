@@ -272,15 +272,37 @@ def get_shipment_detail(shipment_id: str, user=Depends(get_current_user), cur=De
             "answer": c[6],
         })
 
+    # Evaluate required documents even before a graph pass has built its checklist.
+    provided_types = {str(d["type"]).upper() for d in documents if d["status"] == "provided"}
+    required_docs = [
+        {"type": title, "status": "provided" if provided_types & aliases else "missing"}
+        for title, aliases in (
+            ("Commercial invoice", {"INVOICE"}),
+            ("Packing list", {"PACKING_LIST"}),
+            ("B/L atau AWB", {"BL", "BILL_OF_LADING", "AWB"}),
+        )
+    ]
+    cur.execute("""SELECT title,status FROM checklist_items
+        WHERE shipment_id=%s AND company_id=%s AND required_before_submission=true""",
+        (int(shipment_id), int(user["company_id"])))
+    required_docs.extend({"type": row[0], "status": row[1]} for row in cur.fetchall())
+    cur.execute("""SELECT COUNT(*) FROM review_tasks WHERE shipment_id=%s AND company_id=%s
+        AND status IN ('open','pending')""", (int(shipment_id), int(user["company_id"])))
+    open_review_count = cur.fetchone()[0]
+    cur.execute("""SELECT COUNT(*) FROM jobs WHERE shipment_id=%s AND company_id=%s
+        AND status IN ('queued','processing') AND event_type NOT IN ('send_email','followup')""",
+        (int(shipment_id), int(user["company_id"])))
+    pending_job_count = cur.fetchone()[0]
+
     # 5. Evaluate Readiness Deterministically (D06)
     readiness_eval = evaluate_readiness(
         all_items_classified=all_classified,
         has_open_questions=has_open_questions,
-        has_open_reviews=False,
-        documents_status=documents,
+        has_open_reviews=bool(open_review_count),
+        documents_status=required_docs,
         has_rejected_items=has_rejected,
         has_out_of_scope=has_out_of_scope,
-        has_pending_jobs=False,
+        has_pending_jobs=bool(pending_job_count),
     )
 
     return {
@@ -298,7 +320,7 @@ def get_shipment_detail(shipment_id: str, user=Depends(get_current_user), cur=De
         "blocking_issues": readiness_eval.blocking_issues,
         "warnings": readiness_eval.warnings,
         "active_run_id": active_run_id,
-        "pending_job_count": 0,
+        "pending_job_count": pending_job_count,
         "input_version": s_row[10],
         "submitted_at": s_row[11].isoformat() if s_row[11] else None,
         "arrived_at": s_row[12].isoformat() if s_row[12] else None,
