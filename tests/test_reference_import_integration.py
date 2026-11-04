@@ -333,6 +333,27 @@ def test_offline_catalog_retrieval_benchmarks():
     assert len(codes_motor) > 0
     assert any(c.startswith("8501") for c in codes_motor), f"Expected heading 8501 in motor candidates, got {codes_motor}"
 
+    # Benchmark 4: Numeric prefix search "841370" -> returns ONLY 841370 prefix codes
+    res_prefix = search_candidates(repo, "841370", limit=8)
+    codes_prefix = [r["hs_code"] for r in res_prefix]
+    assert len(codes_prefix) > 0, "Expected candidates for 841370 prefix search"
+    assert all(c.startswith("841370") for c in codes_prefix), f"All candidates must start with 841370, got {codes_prefix}"
+
+    # Dotted numeric search "8413.70" -> returns ONLY 841370 prefix codes
+    res_dotted = search_candidates(repo, "8413.70", limit=8)
+    codes_dotted = [r["hs_code"] for r in res_dotted]
+    assert len(codes_dotted) > 0
+    assert all(c.startswith("841370") for c in codes_dotted), f"All candidates must start with 841370, got {codes_dotted}"
+
+    # Benchmark 5: Exact code search "85365099" -> returns exact code
+    res_exact = search_candidates(repo, "85365099", limit=8)
+    codes_exact = [r["hs_code"] for r in res_exact]
+    assert codes_exact == ["85365099"], f"Expected exact ['85365099'], got {codes_exact}"
+
+    # Benchmark 6: Zero lexical matches returns empty list [] (never unrelated apparel 6205/6212)
+    res_zero = search_candidates(repo, "xyzunknownnonsenseattribute9999", limit=8)
+    assert res_zero == [], f"Expected empty list for zero matches, got {[r['hs_code'] for r in res_zero]}"
+
 
 def test_hs_search_canonical_deduplication_and_scope():
     """Verify search endpoint deduplicates canonical codes before limit and get_hs_detail isolates company SIM rules."""

@@ -213,6 +213,28 @@ def search_candidates(repo, description: str, limit=8):
     if not deduped_catalog:
         return []
 
+    desc_clean = (description or "").strip()
+    if not desc_clean:
+        return []
+
+    # 1. Code-aware exact/prefix/dotted matching BEFORE lexical scoring
+    digits_only = re.sub(r"[^0-9]", "", desc_clean)
+    words = set(re.findall(r"[a-zA-Z]+", desc_clean.lower()))
+    noise_code_words = {"hs", "code", "pos", "subpos", "nomor", "no", "kode", "chapter", "bab"}
+    is_code_search = len(digits_only) >= 2 and (not words or words.issubset(noise_code_words))
+
+    if is_code_search:
+        code_matches = []
+        for code, r in deduped_catalog.items():
+            if code == digits_only:
+                code_matches.append((1000.0, code, r))
+            elif code.startswith(digits_only):
+                code_matches.append((100.0, code, r))
+        if code_matches:
+            code_matches.sort(key=lambda x: (-x[0], x[1]))
+            return [item[2] for item in code_matches[:limit]]
+        return []
+
     num_docs = len(deduped_catalog)
     doc_data = []
     df = Counter()
@@ -273,10 +295,13 @@ def search_candidates(repo, description: str, limit=8):
             if matched:
                 matches += 1
 
+        if matches == 0:
+            continue
+
         if matches > 1:
             score *= (1.0 + 0.25 * (matches - 1))
 
-        # Tie-breaker / general basket boost: codes ending in 99 or 90 are residual basket codes
+        # Tie-breaker / general basket boost: only if matches > 0
         if code.endswith("99"):
             score += 0.05
         elif code.endswith("90"):
