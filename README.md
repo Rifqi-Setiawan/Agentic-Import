@@ -4,9 +4,9 @@ Workspace pemeriksaan dokumen impor dengan FastAPI, PostgreSQL, LangGraph, React
 
 ## Demo
 
-- Web: https://imporjaga.rifqisetiawan.my.id
-- API: https://api.imporjaga.rifqisetiawan.my.id/docs
-- Health: https://imporjaga.rifqisetiawan.my.id/health
+- Web: https://artha.rifqisetiawan.my.id
+- API: https://artha.rifqisetiawan.my.id/docs
+- Health: https://artha.rifqisetiawan.my.id/health
 - Staf: staf@mitrakemas.co.id
 - Reviewer: reviewer@mitrakemas.co.id
 - Admin: admin@mitrakemas.co.id

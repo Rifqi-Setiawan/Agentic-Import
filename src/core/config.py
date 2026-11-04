@@ -22,6 +22,7 @@ class Settings(BaseSettings):
         "http://localhost:3060",
         "http://127.0.0.1:3060",
         "https://imporjaga.rifqisetiawan.my.id",
+        "https://artha.rifqisetiawan.my.id",
     ]
 
     LLM_DATA_POLICY: str = "redacted_dev_router"

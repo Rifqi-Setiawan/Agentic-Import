@@ -1,0 +1,27 @@
+# Artha canonical application and same-origin API.
+artha.rifqisetiawan.my.id {
+    import security_headers
+    encode gzip zstd
+
+    reverse_proxy 127.0.0.1:8120 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-Host {host}
+    }
+
+    log {
+        output file /var/log/caddy/artha_access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+        format json
+    }
+}
+
+# Preserve deep links and HTTP methods while moving existing clients.
+imporjaga.rifqisetiawan.my.id, api.imporjaga.rifqisetiawan.my.id {
+    import security_headers
+    redir https://artha.rifqisetiawan.my.id{uri} 308
+}
