@@ -1,0 +1,49 @@
+{
+  "references": [
+    {
+      "number": "PMK 26/PMK.010/2022",
+      "title": "Penetapan Sistem Klasifikasi Barang dan Pembebanan Tarif Bea Masuk atas Barang Impor",
+      "source_url": "https://jdih.kemenkeu.go.id/dok/b1ff6116-ce13-4ba2-676d-08da113e5408",
+      "reference_only": true,
+      "verified_on": "2026-11-04",
+      "authority": "Kementerian Keuangan Republik Indonesia",
+      "scope": "Buku Tarif Kepabeanan Indonesia 2022 (BTKI 2022)"
+    },
+    {
+      "number": "PMK 10 TAHUN 2024",
+      "title": "Perubahan atas Peraturan Menteri Keuangan Nomor 26/PMK.010/2022 tentang Penetapan Sistem Klasifikasi Barang dan Pembebanan Tarif Bea Masuk atas Barang Impor",
+      "source_url": "https://jdih.kemenkeu.go.id/dok/pmk-10-tahun-2024",
+      "reference_only": true,
+      "verified_on": "2026-11-04",
+      "authority": "Kementerian Keuangan Republik Indonesia",
+      "scope": "Amandemen pos tarif dan tarif bea masuk impor"
+    },
+    {
+      "number": "PMK 62 TAHUN 2025",
+      "title": "Perubahan Kedua atas Peraturan Menteri Keuangan Nomor 26/PMK.010/2022 tentang Penetapan Sistem Klasifikasi Barang dan Pembebanan Tarif Bea Masuk atas Barang Impor",
+      "source_url": "https://jdih.kemenkeu.go.id/dok/pmk-62-tahun-2025",
+      "reference_only": true,
+      "verified_on": "2026-11-04",
+      "authority": "Kementerian Keuangan Republik Indonesia",
+      "scope": "Amandemen kedua klasifikasi barang dan tarif impor"
+    },
+    {
+      "number": "PMK 50 TAHUN 2026",
+      "title": "Perubahan Ketiga atas Peraturan Menteri Keuangan Nomor 26/PMK.010/2022 tentang Penetapan Sistem Klasifikasi Barang dan Pembebanan Tarif Bea Masuk atas Barang Impor",
+      "source_url": "https://jdih.kemenkeu.go.id/dok/pmk-50-tahun-2026",
+      "reference_only": true,
+      "verified_on": "2026-11-04",
+      "authority": "Kementerian Keuangan Republik Indonesia",
+      "scope": "Amandemen ketiga klasifikasi barang dan tarif impor"
+    },
+    {
+      "number": "PMK 68 TAHUN 2026",
+      "title": "Perubahan Keempat atas Peraturan Menteri Keuangan Nomor 26/PMK.010/2022 tentang Penetapan Sistem Klasifikasi Barang dan Pembebanan Tarif Bea Masuk atas Barang Impor",
+      "source_url": "https://jdih.kemenkeu.go.id/dok/pmk-68-tahun-2026",
+      "reference_only": true,
+      "verified_on": "2026-11-04",
+      "authority": "Kementerian Keuangan Republik Indonesia",
+      "scope": "Amandemen keempat klasifikasi barang dan tarif impor"
+    }
+  ]
+}

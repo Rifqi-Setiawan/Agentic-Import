@@ -113,8 +113,8 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                                 bm_rate=float(r["bm_rate"]),
                                 ppn_rate=11.0,
                                 pph_rate=2.5,
-                                lartas_coverage="verified_rules" if r["chapter"] in ("33", "84", "85", "61", "62") else "verified_none",
-                                source="BTKI 2022 Official PMK 26/PMK.010/2022",
+                                lartas_coverage="unknown",
+                                source="BTKI 2022 DJBC",
                             )
                             db.add(h)
 

@@ -15,6 +15,7 @@ from src.domain.duty import DutyInput, calculate_import_duties
 from src.domain.lartas import LartasCoverage
 from src.domain.readiness import evaluate_readiness
 from src.services.analysis_repository import repository
+from src.core.catalog import is_official_hs_code
 
 
 class ExtractedItem(BaseModel):
@@ -155,8 +156,13 @@ def plan_shipment(state):
 
 def search_candidates(repo, description: str, limit=8):
     codes = repo.rows("SELECT hs_code,description_id,description_en,bm_rate,ppn_rate,pph_rate,lartas_coverage,source FROM hs_codes ORDER BY hs_code")
+    valid_codes = []
     for row in codes:
-        row["hs_code"] = str(row["hs_code"]).replace(".", "")
+        clean_code = str(row["hs_code"]).replace(".", "")
+        if is_official_hs_code(clean_code):
+            row["hs_code"] = clean_code
+            valid_codes.append(row)
+    codes = valid_codes
     words = set(re.findall(r"[a-z0-9]{3,}", description.lower()))
     # Retrieval is explicitly lexical; model compares the returned descriptions semantically.
     synonyms = {"valve": "katup", "electric": "listrik", "pump": "pompa", "sensor": "sensor", "cotton": "kapas", "shirt": "kemeja", "sealing": "pengemas"}
@@ -237,10 +243,15 @@ def classify_one(repo, item, documents, shipment):
                         available.update({row["hs_code"]: row for row in result})
                         result = [public_candidate(row) for row in result]
                 elif name == "get_hs_detail":
-                    result = repo.one("SELECT hs_code,description_id,description_en,bm_rate,ppn_rate,pph_rate,lartas_coverage,source FROM hs_codes WHERE replace(hs_code,'.','')=%s ORDER BY hs_code LIMIT 1", (str(args.get("hs_code", "")),))
-                    if result:
-                        available[result["hs_code"]] = result
-                        result = public_candidate(result)
+                    target_code = str(args.get("hs_code", "")).replace(".", "")
+                    if not is_official_hs_code(target_code):
+                        result = {"error": f"Kode HS {target_code} tidak terdaftar pada katalog resmi BTKI 2022."}
+                    else:
+                        result = repo.one("SELECT hs_code,description_id,description_en,bm_rate,ppn_rate,pph_rate,lartas_coverage,source FROM hs_codes WHERE replace(hs_code,'.','')=%s ORDER BY hs_code LIMIT 1", (target_code,))
+                        if result:
+                            result["hs_code"] = target_code
+                            available[target_code] = result
+                            result = public_candidate(result)
                 elif name == "ask_clarification":
                     if len(questions) >= 2:
                         result = {"error": "Batas pertanyaan tercapai. Buat keputusan dengan keyakinan rendah atau laporkan di luar cakupan."}
@@ -250,6 +261,8 @@ def classify_one(repo, item, documents, shipment):
                     return {"action": "out_of_scope", "reason": str(args.get("reason", "Di luar cakupan"))}
                 elif name == "submit_classification":
                     code = str(args.get("hs_code", "")).replace(".", "")
+                    if not is_official_hs_code(code):
+                        raise ValueError(f"Kode HS {code} tidak terdaftar pada katalog resmi BTKI 2022.")
                     row = available.get(code)
                     if not row or not re.fullmatch(r"\d{8}", code) or code[:2] not in {"33", "61", "62", "84", "85"}:
                         raise ValueError("Kode wajib delapan digit, dalam cakupan dan sudah dibaca dari katalog.")
@@ -338,7 +351,11 @@ def compliance(state):
             code = item["hs_code_accepted"] or item["hs_code_proposed"]
             if not code or item["status"] in ("out_of_scope", "needs_clarification", "rejected"):
                 continue
-            hs = repo.one("SELECT * FROM hs_codes WHERE replace(hs_code,'.','')=%s ORDER BY hs_code LIMIT 1", (code,))
+            clean_code = str(code).replace(".", "")
+            if not is_official_hs_code(clean_code):
+                repo.ensure_review(item["id"], f"Kode HS {clean_code} tidak valid/terdaftar pada katalog BTKI 2022.")
+                continue
+            hs = repo.one("SELECT * FROM hs_codes WHERE replace(hs_code,'.','')=%s ORDER BY hs_code LIMIT 1", (clean_code,))
             if not hs:
                 repo.ensure_review(item["id"], "Kode HS tidak tersedia di katalog.")
                 continue
@@ -353,7 +370,12 @@ def compliance(state):
                 repo.checklist(rule["requirement_key"], rule["permit_name"], status, item["id"], rule["source"], rule["issuing_agency"])
             rate = Decimal(1) if shipment["currency"] == "IDR" else Decimal(str(shipment["exchange_rate"] or 0))
             if rate <= 0 and not (known_cif > 0 and foreign_total > 0):
+                repo.execute("UPDATE duty_calculations SET is_current=false WHERE item_id=%s AND company_id=%s AND is_current=true", (item["id"], repo.company_id))
                 repo.checklist("EXCHANGE_RATE", "Kurs perhitungan belum tersedia", "missing")
+                continue
+            if hs["bm_rate"] is None or hs["ppn_rate"] is None or hs["pph_rate"] is None:
+                repo.execute("UPDATE duty_calculations SET is_current=false WHERE item_id=%s AND company_id=%s AND is_current=true", (item["id"], repo.company_id))
+                repo.checklist("RATE:" + code, f"Tarif bea masuk belum terverifikasi untuk {code}", "missing", item["id"], "Tarif resmi belum diverifikasi pada katalog BTKI 2022.", "Reviewer kepatuhan")
                 continue
             cif = (known_cif * Decimal(str(item["total_price_cif"])) / foreign_total
                    if known_cif > 0 and foreign_total > 0 else Decimal(str(item["total_price_cif"])) * rate)

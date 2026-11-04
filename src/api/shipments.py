@@ -194,7 +194,7 @@ def get_shipment_detail(shipment_id: str, user=Depends(get_current_user), cur=De
             all_classified = False
 
         ev = evidence_by_item.get(it_id, {})
-        rat = ev.get("rationale") or f"Klasifikasi pos tarif {it[8] or ''} berdasarkan uraian barang dan kecocokan BTKI 2022."
+        rat = ev.get("rationale") or (f"Pos tarif {it[8]}: belum ada inferensi model AI; data usulan berasal dari input demo/manual." if it[8] else "Belum ada bukti inferensi AI; data usulan belum diklasifikasikan.")
         cits = ev.get("citations") or []
         alts = ev.get("alternatives") or []
         attrs = ev.get("attributes") or {}
@@ -556,7 +556,7 @@ def list_shipment_items(
     for r in rows:
         it_id = int(r[0])
         ev = evidence_by_item.get(it_id, {})
-        rat = ev.get("rationale") or f"Klasifikasi pos tarif {r[7] or ''} berdasarkan uraian barang dan kecocokan BTKI 2022."
+        rat = ev.get("rationale") or (f"Pos tarif {r[7]}: belum ada inferensi model AI; data usulan berasal dari input demo/manual." if r[7] else "Belum ada bukti inferensi AI; data usulan belum diklasifikasikan.")
         cits = ev.get("citations") or []
         alts = ev.get("alternatives") or []
         attrs = ev.get("attributes") or {}

@@ -251,6 +251,26 @@ export function Reference({
             {r.is_simulated || r.is_simulation ? (
               <Badge value="SIMULASI" />
             ) : null}
+            {kind === "hs" && (
+              <div className="muted" style={{ marginTop: "4px", fontSize: "0.85em" }}>
+                <span>
+                  Tarif BM:{" "}
+                  {r.bm_rate !== null && r.bm_rate !== undefined
+                    ? `${r.bm_rate}%`
+                    : "Belum diverifikasi (NULL)"}
+                </span>
+                {r.rate_status === "demo_unverified" && (
+                  <span style={{ marginLeft: "8px", color: "#B45309", fontWeight: 500 }}>
+                    [Tarif Demo Belum Diverifikasi]
+                  </span>
+                )}
+                {r.source_page && (
+                  <span style={{ marginLeft: "12px" }}>
+                    Ref: BTKI 2022 DJBC hal. {r.source_page}
+                  </span>
+                )}
+              </div>
+            )}
             {r.lartas_coverage && (
               <p className="muted">
                 Cakupan lartas:{" "}

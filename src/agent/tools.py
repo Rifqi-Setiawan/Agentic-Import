@@ -15,33 +15,40 @@ def search_hs_codes(query: str, chapter: str | None = None) -> list[dict[str, An
     """
     Search official BTKI HS codes by description or code.
     """
+    from src.core.catalog import is_official_hs_code
+
     with get_db() as conn, conn.cursor() as cur:
         clean_q = f"%{query.strip()}%"
         if chapter:
             cur.execute("""
-                    SELECT code, description_id, description_en, bm_rate, lartas_coverage
+                    SELECT hs_code, description_id, description_en, bm_rate, lartas_coverage
                     FROM hs_codes
-                    WHERE chapter = %s AND (description_id ILIKE %s OR description_en ILIKE %s OR code ILIKE %s)
-                    LIMIT 5;
-                """, (chapter, clean_q, clean_q, clean_q))
+                    WHERE hs_code LIKE %s AND (description_id ILIKE %s OR description_en ILIKE %s OR hs_code ILIKE %s)
+                    LIMIT 10;
+                """, (f"{chapter}%", clean_q, clean_q, clean_q))
         else:
             cur.execute("""
-                    SELECT code, description_id, description_en, bm_rate, lartas_coverage
+                    SELECT hs_code, description_id, description_en, bm_rate, lartas_coverage
                     FROM hs_codes
-                    WHERE description_id ILIKE %s OR description_en ILIKE %s OR code ILIKE %s
-                    LIMIT 5;
+                    WHERE description_id ILIKE %s OR description_en ILIKE %s OR hs_code ILIKE %s
+                    LIMIT 10;
                 """, (clean_q, clean_q, clean_q))
         rows = cur.fetchall()
-        return [
-            {
+        results = []
+        for r in rows:
+            clean_c = r[0].replace(".", "").strip()
+            if not is_official_hs_code(clean_c):
+                continue
+            results.append({
                 "code": r[0],
                 "description_id": r[1],
                 "description_en": r[2],
-                "bm_rate": float(r[3]),
-                "lartas_coverage": r[4],
-            }
-            for r in rows
-        ]
+                "bm_rate": float(r[3]) if r[3] is not None else None,
+                "lartas_coverage": r[4] or "unknown",
+            })
+            if len(results) >= 5:
+                break
+        return results
 
 
 def search_shipment_documents(shipment_id: str, query: str) -> list[dict[str, Any]]:
@@ -122,6 +129,10 @@ def query_classification_memory(description: str) -> dict[str, Any] | None:
             """, (clean_desc,))
         row = cur.fetchone()
         if row:
+            from src.core.catalog import is_official_hs_code
+            clean_code = row[0].replace(".", "").strip()
+            if not is_official_hs_code(clean_code):
+                return None
             return {
                 "hs_code": row[0],
                 "notes": row[1],

@@ -53,6 +53,10 @@ demo_invoice_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
 if os.path.isdir(demo_invoice_dir):
     app.mount("/data/demo/invoices", StaticFiles(directory=demo_invoice_dir), name="demo-invoices")
 
+demo_doc_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "demo", "documents")
+if os.path.isdir(demo_doc_dir):
+    app.mount("/data/demo/documents", StaticFiles(directory=demo_doc_dir), name="demo-documents")
+
 # Static frontend serving
 frontend_dist = "/srv/hermes-control/services/agentic-import/frontend/dist"
 if os.path.exists(frontend_dist):

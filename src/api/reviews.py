@@ -122,6 +122,8 @@ def submit_review_decision(
         }
 
     # Approve or Modify
+    from src.core.catalog import is_official_hs_code
+
     final_hs = req.modified_hs_code or req.suggested_hs if decision_clean == "modify" else None
     if decision_clean == "modify":
         if not final_hs:
@@ -129,6 +131,8 @@ def submit_review_decision(
         clean_hs = final_hs.replace(".", "").strip()
         if len(clean_hs) != 8 or not clean_hs.isdigit():
             raise HTTPException(status_code=400, detail=f"Kode HS '{final_hs}' tidak valid. Harus 8 digit numerik.")
+        if not is_official_hs_code(clean_hs):
+            raise HTTPException(status_code=400, detail=f"Kode HS '{final_hs}' tidak ditemukan dalam katalog resmi BTKI")
         cur.execute("SELECT hs_code FROM hs_codes WHERE replace(hs_code, '.', '') = %s OR hs_code = %s LIMIT 1;", (clean_hs, final_hs))
         if not cur.fetchone():
             raise HTTPException(status_code=400, detail=f"Kode HS '{final_hs}' tidak ditemukan dalam katalog resmi BTKI")
@@ -138,6 +142,10 @@ def submit_review_decision(
         final_hs = hs_accepted or hs_proposed
         if not final_hs:
             raise HTTPException(status_code=400, detail="Tidak ada kode HS usulan untuk disetujui")
+        clean_hs = final_hs.replace(".", "").strip()
+        if not is_official_hs_code(clean_hs):
+            raise HTTPException(status_code=400, detail=f"Kode HS usulan '{final_hs}' tidak ditemukan dalam katalog resmi BTKI")
+        final_hs = clean_hs
 
     # Update item status
     cur.execute("""

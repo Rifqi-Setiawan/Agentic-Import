@@ -6,11 +6,19 @@ from src.api.deps import get_current_user, get_db_cursor
 router = APIRouter(prefix="/regulations", tags=["regulations"])
 
 
+@router.get("/references")
+def list_reference_regulations(user=Depends(get_current_user)):
+    from src.core.catalog import get_official_regulations
+    refs = get_official_regulations()
+    return {"references": refs, "data": refs}
+
+
 @router.get("")
 def list_regulations(
     user=Depends(get_current_user),
     cur=Depends(get_db_cursor),
 ):
+    from src.core.catalog import get_official_regulations
     comp_id = int(user["company_id"])
     cur.execute("""
         SELECT id, regulation_number, title, hs_prefix, requirement_code, is_simulation, effective_date
@@ -34,7 +42,11 @@ def list_regulations(
             "is_simulation": bool(r[5]),
             "effective_date": r[6].isoformat() if r[6] else None,
         })
-    return {"regulations": regulations, "data": regulations}
+    return {
+        "regulations": regulations,
+        "data": regulations,
+        "official_references": get_official_regulations(),
+    }
 
 
 class SimulateRequest(BaseModel):
