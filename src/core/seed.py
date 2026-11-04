@@ -19,7 +19,7 @@ from src.models.entities import (
 )
 
 
-def seed_data(db: Session = None):
+def seed_data(db: Session = None, reset: bool = False):
     init_db()
     close_db = False
     if db is None:
@@ -27,6 +27,36 @@ def seed_data(db: Session = None):
         close_db = True
 
     try:
+        if reset:
+            # Clean up existing demo shipments and related records for company 1
+            demo_numbers = ["MKN-011", "MKN-007", "MKN-008", "MKN-003"]
+            demo_shipments = db.query(Shipment).filter(
+                Shipment.company_id == 1,
+                Shipment.shipment_number.in_(demo_numbers),
+            ).all()
+            demo_ids = [s.id for s in demo_shipments]
+            if demo_ids:
+                from src.models.entities import (
+                    AgentRun,
+                    AgentStep,
+                    ChecklistItem,
+                    Job,
+                    OutboxMessage,
+                    ReviewTask,
+                )
+                db.query(ChecklistItem).filter(ChecklistItem.shipment_id.in_(demo_ids)).delete(synchronize_session=False)
+                db.query(DutyCalculation).filter(DutyCalculation.shipment_id.in_(demo_ids)).delete(synchronize_session=False)
+                db.query(Clarification).filter(Clarification.shipment_id.in_(demo_ids)).delete(synchronize_session=False)
+                db.query(ReviewTask).filter(ReviewTask.shipment_id.in_(demo_ids)).delete(synchronize_session=False)
+                db.query(AgentStep).filter(AgentStep.shipment_id.in_(demo_ids)).delete(synchronize_session=False)
+                db.query(AgentRun).filter(AgentRun.shipment_id.in_(demo_ids)).delete(synchronize_session=False)
+                db.query(Job).filter(Job.shipment_id.in_(demo_ids)).delete(synchronize_session=False)
+                db.query(OutboxMessage).filter(OutboxMessage.shipment_id.in_(demo_ids)).delete(synchronize_session=False)
+                db.query(Document).filter(Document.shipment_id.in_(demo_ids)).delete(synchronize_session=False)
+                db.query(ShipmentItem).filter(ShipmentItem.shipment_id.in_(demo_ids)).delete(synchronize_session=False)
+                db.query(Shipment).filter(Shipment.id.in_(demo_ids)).delete(synchronize_session=False)
+                db.commit()
+
         # 1. Company
         comp = db.query(Company).first()
         if not comp:
@@ -62,7 +92,7 @@ def seed_data(db: Session = None):
         import os
         hs_csv = "/srv/hermes-control/services/agentic-import/data/seed/hs_codes.csv"
         if os.path.exists(hs_csv):
-            with open(hs_csv, mode="r", encoding="utf-8") as f:
+            with open(hs_csv, encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for r in reader:
                     code_raw = r["code"].strip()
@@ -206,6 +236,14 @@ def seed_data(db: Session = None):
                         attribute="tekanan_kerja_dan_actuator",
                         reason="Diperlukan untuk membedakan pos 8481.80.90 (katup industri) vs 8481.20 (katup transmisi fluida hidrolik/pneumatik).",
                         status="open",
+                    ))
+                    db.add(ReviewTask(
+                        shipment_id=11,
+                        item_id=it.id,
+                        company_id=1,
+                        review_type="hs_code",
+                        status="pending",
+                        notes="Perlu konfirmasi spesifikasi teknis katup pneumatic untuk menentukan pos 8481.80 atau 8481.20.",
                     ))
 
             # Initial Documents for MKN-011

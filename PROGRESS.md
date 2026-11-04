@@ -35,6 +35,7 @@ Current Candidate: `e303da6` (Candidate ready for independent Sentinel review)
   - Agent Mode: Top-1 HS6 95.0%, Top-1 HS8 100.0%, Top-3 HS8 90.0%, Clarification Recall 100.0%, Unnecessary Questions 0.0% (Status: PASS).
   - Retrieval-Only Baseline: Top-1 HS6 63.3%, Top-1 HS8 56.7%, Top-3 HS8 90.0% (Membuktikan keunggulan agen).
 - [x] UI walkthrough di browser pada `http://127.0.0.1:3060` terhubung langsung ke API backend `8120`.
+- [x] Perbaikan 5 Defect Sentinel (Demo reset SQL schema, answer clarification columns, worker loop schema, frontend endpoint parity, classification memory serial id) & 28/28 tests green.
 - [ ] Review Independen Sentinel & Verifikasi Milestone.
 - [ ] Publikasi GitHub oleh Relay ke `https://github.com/Rifqi-Setiawan/Agentic-Import.git`.
 

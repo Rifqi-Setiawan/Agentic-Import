@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from scripts.ingest_official_data import ingest
 from src.api.admin import evaluate_reset_safety
 from src.api.deps import get_current_user, get_db_cursor
+from src.core.seed import seed_data
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -33,7 +33,7 @@ def reset_demo_data(user=Depends(get_current_user), cur=Depends(get_db_cursor)):
 
     # Re-run ingestion to restore baseline demo data
     try:
-        ingest()
+        seed_data(reset=True)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gagal melakukan reset demo: {e!s}") from e
 

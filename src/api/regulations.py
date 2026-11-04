@@ -6,6 +6,37 @@ from src.api.deps import get_current_user, get_db_cursor
 router = APIRouter(prefix="/regulations", tags=["regulations"])
 
 
+@router.get("")
+def list_regulations(
+    user=Depends(get_current_user),
+    cur=Depends(get_db_cursor),
+):
+    comp_id = int(user["company_id"])
+    cur.execute("""
+        SELECT id, regulation_number, title, hs_prefix, requirement_code, is_simulation, effective_date
+        FROM regulations
+        WHERE company_id IS NULL OR company_id = %s
+        ORDER BY effective_date DESC NULLS LAST, id DESC;
+    """, (comp_id,))
+    rows = cur.fetchall()
+
+    regulations = []
+    for r in rows:
+        regulations.append({
+            "id": str(r[0]),
+            "number": r[1],
+            "regulation_number": r[1],
+            "title": r[2],
+            "summary": f"HS {r[3]} — {r[4]}",
+            "hs_prefix": r[3],
+            "requirement_code": r[4],
+            "is_simulated": bool(r[5]),
+            "is_simulation": bool(r[5]),
+            "effective_date": r[6].isoformat() if r[6] else None,
+        })
+    return {"regulations": regulations, "data": regulations}
+
+
 class SimulateRequest(BaseModel):
     hs_prefix: str = "8481"
     requirement_code: str = "LS_NEW_2026"
