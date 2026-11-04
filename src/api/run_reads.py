@@ -34,12 +34,6 @@ def read_runs(cur, shipment_id: int, company_id: int) -> list[dict]:
     ]
 
 
-@router.get("/{shipment_id}/runs")
-def shipment_runs(shipment_id: int, user=Depends(get_current_user), cur=Depends(get_db_cursor)):
-    require_shipment(cur, shipment_id, user)
-    return {"runs": read_runs(cur, shipment_id, int(user["company_id"]))}
-
-
 @router.get("/{shipment_id}/analysis")
 def shipment_analysis(shipment_id: int, user=Depends(get_current_user), cur=Depends(get_db_cursor)):
     require_shipment(cur, shipment_id, user)

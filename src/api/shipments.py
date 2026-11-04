@@ -630,7 +630,7 @@ def list_shipment_runs(
             "status": r[1],
             "outcome": r[2],
             "total_tokens": r[3],
-            "cost_usd": float(r[4]) if r[4] is not None else 0.0,
+            "cost_usd": float(r[4]) if r[4] is not None else None,
             "started_at": r[5].isoformat() if r[5] else None,
             "ended_at": r[6].isoformat() if r[6] else None,
             "created_at": r[7].isoformat() if r[7] else None,

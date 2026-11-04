@@ -132,6 +132,7 @@ def submit_review_decision(
         cur.execute("SELECT hs_code FROM hs_codes WHERE replace(hs_code, '.', '') = %s OR hs_code = %s LIMIT 1;", (clean_hs, final_hs))
         if not cur.fetchone():
             raise HTTPException(status_code=400, detail=f"Kode HS '{final_hs}' tidak ditemukan dalam katalog resmi BTKI")
+        final_hs = clean_hs
 
     if decision_clean == "approve":
         final_hs = hs_accepted or hs_proposed
