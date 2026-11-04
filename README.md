@@ -1,4 +1,4 @@
-# ImporJaga — Agentic Import MVP
+# Artha — Agentic Import MVP
 
 Workspace pemeriksaan dokumen impor dengan FastAPI, PostgreSQL, LangGraph, React/Vite dan AI melalui **9Router**. Satu pengguna terikat ke satu perusahaan.
 

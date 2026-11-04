@@ -10,11 +10,15 @@ import {
   ArrowRight,
   Plus,
   RefreshCw,
+  LayoutDashboard,
+  Building2,
+  ChevronDown,
 } from "lucide-react";
 import { Row, request, post, list, setAuthToken, logout, token } from "./api";
 import { Badge, Card, Empty, Field } from "./components/Common";
 import { Shipment } from "./components/Shipment";
 import { WorkQueue, Reference } from "./components/WorkQueue";
+import { Dashboard } from "./components/Dashboard";
 
 const DEMO = [
   ["Staf impor", "staf@mitrakemas.co.id"],
@@ -23,7 +27,8 @@ const DEMO = [
 ];
 export default function App() {
   const [user, setUser] = useState<Row>();
-  const [view, setView] = useState("shipments");
+  const [view, setView] = useState("dashboard");
+  const [shipmentSearch, setShipmentSearch] = useState("");
   const [selected, setSelected] = useState("");
   const [ships, setShips] = useState<Row[]>([]);
   const [error, setError] = useState("");
@@ -52,7 +57,7 @@ export default function App() {
       setAuthToken(data.access_token);
       setUser(data.user || data);
       setSelected("");
-      setView("shipments");
+      setView("dashboard");
       setError("");
       setNotice("");
     } catch (e) {
@@ -91,6 +96,7 @@ export default function App() {
       });
       const data = result.data || result;
       setCreating(false);
+      setView("shipments");
       setSelected(String(data.id));
       notify("Kiriman tersimpan. Unggah invoice di tab Dokumen.");
       await load();
@@ -125,7 +131,9 @@ export default function App() {
         <section>
           <div className="brand">
             <ShieldCheck />
-            <span>ImporJaga</span>
+            <span>
+              Artha<small>IMPORT, WITH CONFIDENCE.</small>
+            </span>
           </div>
           <span className="eyebrow">DARI INVOICE KE PEMERIKSAAN IMPOR</span>
           <h1>
@@ -193,6 +201,7 @@ export default function App() {
       </div>
     );
   const nav = [
+    ["dashboard", "Dashboard", LayoutDashboard],
     ["shipments", "Kiriman impor", Package],
     ...(user.role !== "ppjk_reviewer"
       ? [["clarifications", "Klarifikasi", MessagesSquare]]
@@ -210,8 +219,20 @@ export default function App() {
         <div className="brand">
           <ShieldCheck />
           <span>
-            ImporJaga<small>IMPORT COMPLIANCE WORKSPACE</small>
+            Artha<small>IMPORT WORKSPACE</small>
           </span>
+        </div>
+        <div className="company-card">
+          <span className="company-icon">
+            <Building2 size={17} />
+          </span>
+          <div>
+            <small>Perusahaan</small>
+            <strong>
+              {user.company_name || user.company?.name || "Perusahaan Anda"}
+            </strong>
+          </div>
+          <ChevronDown size={14} />
         </div>
         <nav>
           {nav.map(([key, title, Icon]: any) => (
@@ -228,6 +249,33 @@ export default function App() {
             </button>
           ))}
         </nav>
+        <div className="sidebar-shipments">
+          <span className="section-label">KIRIMAN TERBARU</span>
+          {[...ships]
+            .sort(
+              (a, b) =>
+                (Date.parse(b.created_at) || 0) -
+                (Date.parse(a.created_at) || 0),
+            )
+            .slice(0, 4)
+            .map((s) => (
+              <button
+                key={s.id}
+                onClick={() => {
+                  setView("shipments");
+                  setSelected(String(s.id));
+                }}
+              >
+                <Package size={13} />
+                <span>{s.reference_no || s.shipment_number}</span>
+                <i
+                  className={
+                    s.readiness_status === "ready" ? "ready-dot" : "pending-dot"
+                  }
+                />
+              </button>
+            ))}
+        </div>
         <div className="profile">
           <strong>{user.full_name || user.email}</strong>
           <span>
@@ -249,9 +297,16 @@ export default function App() {
         <div className="topline">
           <span>
             <span className="status-dot" />
-            Workspace perusahaan
+            {user.company_name || "Workspace perusahaan"}{" "}
+            <span className="breadcrumb-separator">/</span>{" "}
+            {String(nav.find((n) => n[0] === view)?.[1] || "Dashboard")}
           </span>
-          <span>Prototipe · data demo fiktif</span>
+          <span className="workspace-mode">
+            Workspace demo{" "}
+            <span className="avatar">
+              {(user.full_name || user.email || "A").slice(0, 1).toUpperCase()}
+            </span>
+          </span>
         </div>
         {notice && (
           <div role="status" className="notice flex justify-between gap-4">
@@ -268,6 +323,25 @@ export default function App() {
           <p role="alert" className="notice bad">
             {error}
           </p>
+        )}
+        {view === "dashboard" && (
+          <Dashboard
+            ships={ships}
+            user={user}
+            onOpen={(id) => {
+              setView("shipments");
+              setSelected(id);
+            }}
+            onCreate={
+              user.role !== "ppjk_reviewer"
+                ? () => setCreating(true)
+                : undefined
+            }
+            onViewShipments={() => {
+              setView("shipments");
+              setSelected("");
+            }}
+          />
         )}
         {view === "shipments" &&
           (selected ? (
@@ -374,6 +448,15 @@ export default function App() {
                 </div>
               </Card>
               <Card title="Daftar kiriman">
+                <label className="shipment-search">
+                  <Search size={17} />
+                  <input
+                    aria-label="Cari kiriman"
+                    placeholder="Cari referensi atau pemasok…"
+                    value={shipmentSearch}
+                    onChange={(e) => setShipmentSearch(e.target.value)}
+                  />
+                </label>
                 {ships.length ? (
                   <div className="table-wrap">
                     <table>
@@ -387,28 +470,36 @@ export default function App() {
                         </tr>
                       </thead>
                       <tbody>
-                        {ships.map((s) => (
-                          <tr key={s.id}>
-                            <td>
-                              <strong>
-                                {s.reference_no || s.shipment_number}
-                              </strong>
-                              <small>{s.supplier_name}</small>
-                            </td>
-                            <td>{s.item_count ?? "—"}</td>
-                            <td>
-                              <Badge value={s.status} />
-                            </td>
-                            <td>
-                              <Badge value={s.readiness_status} />
-                            </td>
-                            <td>
-                              <button onClick={() => setSelected(String(s.id))}>
-                                Buka <ArrowRight size={14} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                        {ships
+                          .filter((s) =>
+                            `${s.reference_no || s.shipment_number} ${s.supplier_name}`
+                              .toLowerCase()
+                              .includes(shipmentSearch.toLowerCase()),
+                          )
+                          .map((s) => (
+                            <tr key={s.id}>
+                              <td>
+                                <strong>
+                                  {s.reference_no || s.shipment_number}
+                                </strong>
+                                <small>{s.supplier_name}</small>
+                              </td>
+                              <td>{s.item_count ?? "—"}</td>
+                              <td>
+                                <Badge value={s.status} />
+                              </td>
+                              <td>
+                                <Badge value={s.readiness_status} />
+                              </td>
+                              <td>
+                                <button
+                                  onClick={() => setSelected(String(s.id))}
+                                >
+                                  Buka <ArrowRight size={14} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
                       </tbody>
                     </table>
                   </div>
@@ -462,8 +553,8 @@ export default function App() {
           </Card>
         )}
         <footer>
-          ImporJaga · Prototipe pemeriksaan impor. Hasil perlu diverifikasi;
-          bukan pengajuan resmi.
+          Artha · Prototipe pemeriksaan impor. Hasil perlu diverifikasi; bukan
+          pengajuan resmi.
         </footer>
       </main>
       {creating && (

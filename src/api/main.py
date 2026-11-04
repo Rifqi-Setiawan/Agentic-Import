@@ -17,8 +17,8 @@ from src.api.sse import router as sse_router
 from src.core.config import settings
 
 app = FastAPI(
-    title="ImporJaga API",
-    description="Autonomous Import Compliance & Advisory Platform (MVP v1.1)",
+    title="Artha API",
+    description="Artha — Import Compliance Workspace (MVP v1.1)",
     version="1.1.0",
 )
 
@@ -67,7 +67,7 @@ else:
     @app.get("/")
     def root():
         return {
-            "name": "ImporJaga API",
+            "name": "Artha API",
             "version": "1.1.0",
             "documentation": "/docs",
             "health": "/health",
