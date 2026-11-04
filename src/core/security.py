@@ -42,12 +42,12 @@ def decode_access_token(token: str) -> dict[str, Any]:
         ) from e
 
 
-def verify_company_access(resource_company_id: int | None, current_user_company_id: int) -> None:
+def verify_company_access(resource_company_id: int | str | None, current_user_company_id: int | str) -> None:
     """
     Enforces D01: Exactly one company per user.
     If the resource belongs to a different company, return 404 (not 403) to prevent enumeration.
     """
-    if resource_company_id is not None and resource_company_id != current_user_company_id:
+    if resource_company_id is not None and int(resource_company_id) != int(current_user_company_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Resource tidak ditemukan",

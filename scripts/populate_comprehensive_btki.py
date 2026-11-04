@@ -1,6 +1,4 @@
 import csv
-import os
-from decimal import Decimal
 
 REAL_BTKI_DATA = [
     # =========================================================================

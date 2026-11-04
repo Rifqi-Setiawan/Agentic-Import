@@ -15,6 +15,13 @@ def reset_demo_data(user=Depends(get_current_user), cur=Depends(get_db_cursor)):
     Replay / reset does NOT duplicate jobs, reviews, or emails.
     Rejected if any active analysis run is in flight.
     """
+    user_role = user.get("role", "")
+    if user_role not in ("admin", "superadmin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hanya admin yang memiliki wewenang untuk mereset data demo",
+        )
+
     comp_id = user["company_id"]
 
     # Check active runs
@@ -24,7 +31,7 @@ def reset_demo_data(user=Depends(get_current_user), cur=Depends(get_db_cursor)):
     """, (comp_id,))
     active_runs = cur.fetchone()[0]
 
-    safety = evaluate_reset_safety(has_active_run=(active_runs > 0), company_id=1)
+    safety = evaluate_reset_safety(has_active_run=(active_runs > 0), company_id=comp_id)
     if not safety.allowed:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -33,7 +40,7 @@ def reset_demo_data(user=Depends(get_current_user), cur=Depends(get_db_cursor)):
 
     # Re-run ingestion to restore baseline demo data
     try:
-        seed_data(reset=True)
+        seed_data(reset=True, target_company_id=int(comp_id))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gagal melakukan reset demo: {e!s}") from e
 

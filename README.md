@@ -1,134 +1,67 @@
-# ImporJaga — Autonomous Import Compliance & Customs Advisory Platform
+# ImporJaga — Agentic Import MVP
 
-[![CI Pipeline](https://img.shields.io/badge/CI-Passing-brightgreen.svg)]()
-[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)]()
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)]()
-[![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16%2Bpgvector-336791.svg)]()
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+Workspace pemeriksaan dokumen impor dengan FastAPI, PostgreSQL, LangGraph, React/Vite dan AI melalui **9Router**. Satu pengguna terikat ke satu perusahaan.
 
-Platform audit kepabeanan, klasifikasi pos tarif Harmonized System (HS) BTKI 2022, perizinan Larangan & Pembatasan (Lartas) INSW, dan perhitungan pungutan impor deterministik berbasis **Agentic AI** yang dibangun dengan kaidah **Clean Code** dan **Clean Architecture**.
+## Demo
 
----
+- Web: https://imporjaga.rifqisetiawan.my.id
+- API: https://api.imporjaga.rifqisetiawan.my.id/docs
+- Health: https://imporjaga.rifqisetiawan.my.id/health
+- Staf: staf@mitrakemas.co.id
+- Reviewer: reviewer@mitrakemas.co.id
+- Admin: admin@mitrakemas.co.id
+- Password akun demo: imporjaga123
 
-## 🌟 Nilai Tambah & Fitur Utama
+Data perusahaan dan berkas contoh fiktif. Pengajuan PIB tetap dilakukan manusia di luar aplikasi.
 
-1. **Penalaran Klasifikasi Pos Tarif HS Multilateral (Bab 33, 61, 62, 84, 85)**:
-   - Loop ReAct dengan justifikasi hukum kepabeanan berbasis Catatan Bagian, Catatan Bab, dan Ketentuan Umum Menginterpretasi HS (KUMHS 1 s/d 6).
-   - Memori keputusan historis manusia (*Classification Memory*) terikat per perusahaan untuk pembelajaran berkelanjutan.
-   - Benchmark evaluasi akurasi klasifikasi: **Top-1 HS6: 95.0%**, **Top-1 HS8: 100.0%**, **Top-3 HS8: 90.0%**.
+## Alur mencoba
 
-2. **Perhitungan Pungutan Pabean Deterministik**:
-   - Penghitungan Bea Masuk (BM MFN), Nilai Impor, PPN Impor (11%), dan PPh Pasal 22 (PMK 51/2025 Lampiran A/B/C, 2.5% Ber-API, 7.5% Non-API).
-   - Aturan pembulatan ke atas ribuan rupiah sesuai standar estimasi kepabeanan.
+1. Login staf, buat kiriman dengan referensi unik. Isi kurs demo secara eksplisit atau CIF rupiah yang sudah diketahui. Untuk melihat SMTP sandbox, gunakan penerima fiktif `tim-impor@mitrakemas.co.id`; tidak ada pengiriman eksternal.
+2. Unggah invoice PDF berteks di tab Dokumen. Worker mengekstrak barang dan menjalankan model 9Router, menyimpan bukti serta langkah secara langsung.
+3. Buka Barang dan Jejak. Jawab pertanyaan atau unggah datasheet bila atribut kurang. Usulan baru membutuhkan review manusia.
+4. Login reviewer, setujui atau ubah kode katalog dengan catatan. Sistem menghitung ulang kepatuhan dan pungutan.
+5. Kelengkapan invoice, packing list, B/L/AWB dan izin yang relevan diperiksa. Dokumen pending dan review terbuka menghalangi kesiapan.
+6. Admin dapat menjalankan aturan SIMULASI pos 8481; pencocokan dilakukan menurut HS, bukan nomor kiriman tetap.
 
-3. **Penyelarasan Regulasi Lartas & Simulasi Proaktif**:
-   - Penggabungan (*merging*) kewajiban perizinan lintas instansi (Kemenperin, Kemendag, BPOM) secara otomatis.
-   - Deteksi konflik regulasi (*DATA_CONFLICT*) konservatif yang mewajibkan intervensi manusia.
-   - *Regulatory Watcher*: memantau kiriman aktif terhadap perubahan aturan baru tanpa membatalkan pilihan kode HS yang sah (*recalc-only*).
+## Batas prototipe yang perlu diketahui
 
-4. **Satu Mesin Kesiapan Tunggal (*Deterministic Readiness Engine*)**:
-   - Status kesiapan deterministik (`ready`, `incomplete`, `blocked`).
-   - Mencegah pengajuan PIB prematur jika dokumen prasyarat masih berstatus `pending` atau `missing`.
+- Retrieval saat ini **lexical catalogue**, bukan embedding/vector search. Pemilihan dan penalaran menggunakan model nyata melalui 9Router; kode dan kutipan divalidasi terhadap katalog.
+- Tarif/kurs dataset demo memerlukan verifikasi sumber sebelum penggunaan kepabeanan sungguhan. Kurs baru tidak diasumsikan otomatis dari model. Pungutan adalah estimasi demonstrasi.
+- SMTP default adalah **sandbox lokal 127.0.0.1:1025**, tidak meneruskan pesan ke internet. Receipt disimpan privat. Status sent berarti adapter SMTP menerima pesan, bukan pemasok eksternal membacanya.
+- Tidak ada pengajuan CEISA, IMAP produksi, vision/OCR, atau jaminan klasifikasi hukum. PDF scan/terenkripsi tidak didukung MVP ini.
+- Biaya USD tidak diisi bila harga model belum dikonfigurasi. Token diambil dari respons gateway; tidak ada angka token buatan.
+- Recovery menggunakan pekerjaan persisten dan pass idempoten; tidak mengklaim PostgresSaver checkpoint LangGraph.
+- Angka akurasi pada laporan lama tidak valid sebagai benchmark agent live. Lihat reports/README.md. Tidak ada klaim akurasi final sebelum evaluasi yang dapat direproduksi.
 
----
+## Arsitektur
 
-## 🏗️ Pola Desain & Clean Architecture
+- src/domain: kalkulasi Decimal, readiness dan aturan murni.
+- src/services: repository transaksi, ekstraksi PDF, retrieval, loop model/tools, bukti, checklist, dan hasil pass.
+- src/agent: adapter jaringan 9Router dan graph orkestrasi.
+- src/api: kontrak HTTP, otorisasi, upload, read models dan SSE.
+- src/worker: dispatcher, lease/heartbeat, outbox dan followup.
+- frontend/src/components: detail kiriman, trace, antrean kerja dan referensi; hasil diambil dari API.
 
-Kode disusun dengan pemisahan tanggung jawab yang proporsional (*Separation of Concerns*), memastikan aturan bisnis tidak terikat pada framework web, database, maupun gateway AI.
+## Menjalankan dan memverifikasi
 
-```text
-src/
-├── domain/                  # Lapis 1: Core Business Domain (Pure Python & Pydantic)
-│   ├── duty.py              # Logika murni rumus pungutan & pembulatan ribuan (tanpa DB/HTTP)
-│   ├── lartas.py            # Logika penggabungan prefiks & aturan lartas INSW
-│   ├── readiness.py         # Mesin penentu kesiapan kiriman tunggal (D06)
-│   ├── classifier.py        # Komposisi skor keyakinan & policy auto-approval
-│   ├── dispatcher.py        # Logika debouncing & pemilihan target eksekusi
-│   └── regulations.py       # Kontrak dampak perubahan regulasi
-│
-├── core/                    # Lapis 2: Shared Kernel & Cross-Cutting Concerns
-│   ├── config.py            # Konfigurasi aplikasi & manajemen environment
-│   ├── database.py          # Session pooling & engine PostgreSQL
-│   ├── security.py          # JWT Bearer, bcrypt password hash, multi-tenant guard
-│   ├── rate_limit.py        # Throttling IP (30 req/min) & cooldown akun (5x salah -> 60s)
-│   └── seed.py              # Inisialisasi basis data resmi & skenario demo
-│
-├── models/                  # Lapis 3: Data Persistence Entities (SQLAlchemy ORM)
-│   └── entities.py          # Definisi skema 25 tabel relasional
-│
-├── agent/                   # Lapis 4: Agentic Orchestration & AI Gateway
-│   ├── graph.py             # LangGraph StateGraph (14-node sequential pass)
-│   ├── llm.py               # Klien model OpenAI-compatible (9Router local gateway)
-│   ├── tools.py             # Registri pemanggilan tool terisolasi
-│   ├── guard.py             # Guardrail sanitasi prompt injection
-│   └── sse.py               # Generator streaming jejak agen (Server-Sent Events)
-│
-├── worker/                  # Lapis 5: Asynchronous Background Processing
-│   ├── main.py              # Job processor antrean SKIP LOCKED dengan heartbeat
-│   ├── watcher.py           # Evaluator pemantau kiriman terhadap regulasi baru
-│   └── outbox.py            # Transactional outbox idempoten dengan dedupe_key
-│
-└── api/                     # Lapis 6: Transport & Presentation Controllers (FastAPI)
-    ├── auth.py              # Autentikasi login, profil, dan token JWT
-    ├── shipments.py         # Endpoint REST operasional kiriman & dokumen
-    ├── clarifications.py    # Endpoint antrean tanya-jawab spesifikasi
-    ├── reviews.py           # Endpoint telaah ahli PPJK (approve/modify/reject)
-    ├── regulations.py       # Endpoint katalog regulasi & trigger simulasi
-    ├── hs.py                # Endpoint pencarian database 222 kode HS
-    ├── admin_routes.py      # Endpoint isolasi reset demo per perusahaan
-    ├── sse.py               # Endpoint stream jejak SSE
-    └── health.py            # Liveness, readiness, dan heartbeat probe
-```
+Gunakan Python3.12, PostgreSQL, .venv dan konfigurasi .env dari .env.example. Rahasia dan runtime mailbox tidak masuk Git.
 
-### Prinsip Clean Code yang Diterapkan:
-1. **Dependency Inversion**: Lapis `src/domain/` bebas dari impor `fastapi`, `psycopg`, atau `sqlalchemy`. Aturan bisnis dapat diuji secara terisolasi dalam milidetik tanpa koneksi jaringan/database.
-2. **Single Responsibility Principle**: Tiap berkas bertanggung jawab atas satu konsep fungsional (contoh: `duty.py` khusus kalkulasi tarif pabean; `readiness.py` khusus status pengajuan).
-3. **Explicit Contracts**: Masukan dan keluaran didefinisikan menggunakan tipe kuat (Pydantic models, TypedDict, Decimal untuk uang).
-4. **Defensive Coding & Security**: Multi-tenant isolation terverifikasi di setiap request (`verify_company_access`). Pengecekan authorization token dan role-based access control (RBAC).
-
----
-
-## 🚀 Akses Layanan & Live Demo
-
-- **Aplikasi Web**: [https://imporjaga.rifqisetiawan.my.id](https://imporjaga.rifqisetiawan.my.id)
-- **Dokumentasi OpenAPI / Swagger**: [https://api.imporjaga.rifqisetiawan.my.id/docs](https://api.imporjaga.rifqisetiawan.my.id/docs)
-- **Health Check Endpoint**: [https://imporjaga.rifqisetiawan.my.id/health](https://imporjaga.rifqisetiawan.my.id/health)
-
-### Akun Demo Resmi:
-| Peran | Email | Kata Sandi | Hak Akses |
-|---|---|---|---|
-| **Staf Impor** | `staf@mitrakemas.co.id` | `imporjaga123` | Buat kiriman, unggah faktur, jawab pertanyaan teknis |
-| **Reviewer PPJK** | `reviewer@mitrakemas.co.id` | `imporjaga123` | Telaah kode HS, setujui/modifikasi/tolak review |
-| **Admin Logistik** | `admin@mitrakemas.co.id` | `imporjaga123` | Simulasi aturan baru, pantau jejak, reset demo |
-
-*(Tersedia tombol "Peran Demo Cepat" di bilah samping UI untuk berpindah peran secara instan).*
-
----
-
-## 🧪 Pengujian & Verifikasi Kualitas
-
-### Menjalankan Seluruh Acceptance Test Suite:
 ```bash
-# Menjalankan 23 acceptance tests (A01 - A18, duty rounding, watcher)
-PYTHONPATH=. pytest tests/ -v
+pip install -e .
+PYTHONPATH=. python scripts/migrate_runtime.py
+PYTHONPATH=. uvicorn src.api.main:app --host 127.0.0.1 --port 8120
+PYTHONPATH=. python -m src.worker.main
+python scripts/smtp_sandbox.py
+cd frontend && npm ci && npm run build
 ```
 
-### Menjalankan Benchmark Akurasi Klasifikasi HS:
+Pengujian yang melakukan mutasi harus memakai imporjaga_test, bukan database demo aktif:
+
 ```bash
-# Evaluasi pada dataset 60 item (Bab 33, 61, 62, 84, 85)
-PYTHONPATH=. python backend/app/eval/eval_hs.py --mode agent
+PYTHONPATH=. .venv/bin/python -m pytest tests/test_acceptance_protected.py tests/test_audit_api_regressions.py tests/test_audit_acceptance_v2.py -q
+PYTHONPATH=. .venv/bin/python tests/live_pipeline_smoke.py
 ```
 
----
+Suite audit v2 memasang guard dan dependency DB tes. Smoke live secara eksplisit memilih TEST_DATABASE_URL dan membuat fixture baru. Tes integrasi lama belum dijadikan perintah produksi: jangan menjalankan reset/simulate/approve terhadap demo aktif tanpa isolasi.
 
-## 🛠️ Stack Teknologi
-
-- **Backend**: Python 3.12, FastAPI, SQLAlchemy 2, Psycopg 3, LangGraph, Pydantic v2.
-- **Frontend**: React 18, TypeScript, Tailwind CSS, Lucide Icons, Vite.
-- **Database**: PostgreSQL 16 + pgvector, pgcrypto.
-- **AI Inference Gateway**: 9Router local endpoint (`ag/gemini-3.8-flash-high`).
-- **Web Server / Reverse Proxy**: Caddy v2 (Automatic HTTPS / Let's Encrypt).
-- **Service Supervision**: Systemd user daemon (`imporjaga-api.service`, `imporjaga-worker.service`).
-
----
-Diterbitkan untuk kompetisi rekayasa AI kepabeanan & logistik impor Indonesia.
+Sebelum deployment jalankan migrasi, build frontend, verifikasi kandidat dan restart hanya layanan ImporJaga. Backup sebelum remediasi tersedia di direktori backup VPS operator. Bukti audit awal dan perbaikan fixture dipertahankan di docs/.

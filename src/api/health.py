@@ -1,27 +1,16 @@
 from datetime import UTC, datetime
-
 from fastapi import APIRouter, Depends
-
 from src.api.deps import get_db_cursor
-
-router = APIRouter(tags=["health"])
-
-
+router=APIRouter(tags=["health"])
 @router.get("/health")
 def health_check(cur=Depends(get_db_cursor)):
-    # 1. DB ping
-    cur.execute("SELECT 1;")
-    db_ok = cur.fetchone()[0] == 1
-
-    # 2. Worker heartbeat
-    cur.execute("SELECT MAX(heartbeat_at) FROM jobs;")
-    row = cur.fetchone()
-    last_worker_heartbeat = row[0].isoformat() if row and row[0] else None
-
-    return {
-        "status": "UP",
-        "service": "imporjaga-api",
-        "database": "connected" if db_ok else "unreachable",
-        "worker_heartbeat": last_worker_heartbeat or "worker_active",
-        "timestamp": datetime.now(UTC).isoformat(),
-    }
+    cur.execute("SELECT 1")
+    connected=cur.fetchone()[0] == 1
+    cur.execute("SELECT last_seen FROM worker_heartbeat WHERE id=1")
+    row=cur.fetchone()
+    now=datetime.now(UTC)
+    seen=row[0] if row else None
+    age=(now-seen).total_seconds() if seen else None
+    return {"status":"UP" if connected and age is not None and age<=60 else "DEGRADED",
+        "database":"connected" if connected else "unreachable", "service":"imporjaga-api",
+        "worker_heartbeat":seen.isoformat() if seen else None,"worker_age_seconds":age,"timestamp":now.isoformat()}

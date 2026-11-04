@@ -10,6 +10,7 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -46,10 +47,13 @@ class User(Base):
 
 class Shipment(Base):
     __tablename__ = "shipments"
+    __table_args__ = (
+        UniqueConstraint("company_id", "shipment_number", name="uq_shipments_company_shipment_number"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
-    shipment_number = Column(String(100), unique=True, nullable=False, index=True)
+    shipment_number = Column(String(100), nullable=False, index=True)
     supplier_name = Column(String(255), nullable=False)
     supplier_email = Column(String(255), nullable=False)
     bl_number = Column(String(100), nullable=True)

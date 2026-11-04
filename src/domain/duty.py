@@ -1,5 +1,4 @@
-import math
-from decimal import Decimal
+from decimal import ROUND_CEILING, Decimal
 
 from pydantic import BaseModel
 
@@ -24,9 +23,8 @@ def ceil_thousand(val: Decimal) -> Decimal:
     """
     Round up to nearest thousand (kebijakan pembulatan ke atas ribuan kepabeanan estimasi).
     """
-    f_val = float(val)
-    rounded = math.ceil(f_val / 1000.0) * 1000
-    return Decimal(str(int(rounded)))
+    thousand = Decimal("1000")
+    return (val / thousand).to_integral_value(rounding=ROUND_CEILING) * thousand
 
 
 def calculate_import_duties(duty_input: DutyInput) -> DutyOutput:

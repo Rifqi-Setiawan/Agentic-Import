@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from src.api.deps import get_current_user, get_db_cursor
@@ -56,7 +56,22 @@ def simulate_demo_regulation(
     - MKN-008 (submitted) -> keeps status submitted, sets needs_action_rule_change
     - MKN-003 (arrived) -> ignored
     """
+    user_role = user.get("role", "")
+    if user_role not in ("admin", "superadmin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hanya admin yang berwenang melakukan simulasi perubahan regulasi",
+        )
+
     comp_id = int(user["company_id"])
+
+    # Verify company exists
+    cur.execute("SELECT id FROM companies WHERE id = %s;", (comp_id,))
+    if not cur.fetchone():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Perusahaan tidak ditemukan",
+        )
 
     # 1. Check or insert simulated regulation
     cur.execute("""
@@ -70,7 +85,7 @@ def simulate_demo_regulation(
             INSERT INTO regulations (company_id, regulation_number, title, hs_prefix, requirement_code, is_simulation, effective_date, created_at)
             VALUES (%s, %s, %s, %s, %s, true, NOW(), NOW())
             RETURNING id;
-        """, (comp_id, "SIM-REG-8481-2026", req.title, req.hs_prefix, req.requirement_code))
+        """, (comp_id, f"SIM-REG-{req.hs_prefix}-2026", req.title, req.hs_prefix, req.requirement_code))
         reg_id = cur.fetchone()[0]
 
         # Add corresponding lartas rule
@@ -81,15 +96,34 @@ def simulate_demo_regulation(
     else:
         reg_id = existing[0]
 
-    # 2. Update affected shipments for company
-    # Update MKN-007 (ready -> needs_review)
+    # 2. Update affected shipments for company using generic watcher
+    from src.worker.watcher import find_affected_shipments_by_hs_prefix
+    affected_list = find_affected_shipments_by_hs_prefix(company_id=comp_id, hs_prefix=req.hs_prefix, cur=cur)
+
+    for aff in affected_list:
+        s_id = aff["shipment_id"]
+        s_st = aff["status"]
+        if s_st in ("ready", "analyzed"):
+            cur.execute("""
+                UPDATE shipments
+                SET status = 'needs_review', readiness_status = 'incomplete', updated_at = NOW()
+                WHERE id = %s;
+            """, (s_id,))
+        elif s_st == "submitted":
+            cur.execute("""
+                UPDATE shipments
+                SET needs_action_rule_change = true, updated_at = NOW()
+                WHERE id = %s;
+            """, (s_id,))
+
+    # Update MKN-007 (ready -> needs_review) if present
     cur.execute("""
         UPDATE shipments
         SET status = 'needs_review', readiness_status = 'incomplete', updated_at = NOW()
         WHERE company_id = %s AND shipment_number = 'MKN-007' AND status != 'arrived';
     """, (comp_id,))
 
-    # Update MKN-008 (submitted -> stays submitted, flag action required)
+    # Update MKN-008 (submitted -> stays submitted, flag action required) if present
     cur.execute("""
         UPDATE shipments
         SET needs_action_rule_change = true, updated_at = NOW()

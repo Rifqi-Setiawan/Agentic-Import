@@ -1,3 +1,5 @@
+import csv
+import os
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
@@ -19,7 +21,7 @@ from src.models.entities import (
 )
 
 
-def seed_data(db: Session = None, reset: bool = False):
+def seed_data(db: Session = None, reset: bool = False, target_company_id: int | None = None):
     init_db()
     close_db = False
     if db is None:
@@ -27,12 +29,29 @@ def seed_data(db: Session = None, reset: bool = False):
         close_db = True
 
     try:
+        # 1. Company Resolution
+        comp = None
+        if target_company_id:
+            comp = db.query(Company).filter_by(id=target_company_id).first()
+        if not comp:
+            comp = db.query(Company).first()
+        if not comp:
+            comp = Company(
+                name="PT Mitra Kemas Nusantara",
+                npwp="01.234.567.8-012.000",
+                is_active=True,
+            )
+            db.add(comp)
+            db.flush()
+
+        target_cid = comp.id
+
         if reset:
-            # Clean up existing demo shipments and related records for company 1
-            demo_numbers = ["MKN-011", "MKN-007", "MKN-008", "MKN-003"]
+            # Clean up existing demo shipments and related records for target company only
+            demo_numbers = ["MKN-011", "MKN-007", "MKN-008", "MKN-003", f"MKN-C{target_cid}-011", "MKN-C2-011"]
             demo_shipments = db.query(Shipment).filter(
-                Shipment.company_id == 1,
-                Shipment.shipment_number.in_(demo_numbers),
+                Shipment.company_id == target_cid,
+                (Shipment.shipment_number.in_(demo_numbers) | Shipment.shipment_number.like("MKN-%")),
             ).all()
             demo_ids = [s.id for s in demo_shipments]
             if demo_ids:
@@ -57,18 +76,7 @@ def seed_data(db: Session = None, reset: bool = False):
                 db.query(Shipment).filter(Shipment.id.in_(demo_ids)).delete(synchronize_session=False)
                 db.commit()
 
-        # 1. Company
-        comp = db.query(Company).first()
-        if not comp:
-            comp = Company(
-                name="PT Mitra Kemas Nusantara",
-                npwp="01.234.567.8-012.000",
-                is_active=True,
-            )
-            db.add(comp)
-            db.flush()
-
-        # 2. Users (3 Roles under PT Mitra Kemas Nusantara)
+        # 2. Users (3 Roles under Resolved Company)
         users_data = [
             ("staf@mitrakemas.co.id", "Ahmad Staf Impor", "importer_staff"),
             ("reviewer@mitrakemas.co.id", "Budi Ahli Kepabeanan", "ppjk_reviewer"),
@@ -78,7 +86,7 @@ def seed_data(db: Session = None, reset: bool = False):
             u = db.query(User).filter_by(email=email).first()
             if not u:
                 u = User(
-                    company_id=1,
+                    company_id=comp.id,
                     email=email,
                     full_name=name,
                     password_hash=get_password_hash("imporjaga123"),
@@ -88,15 +96,12 @@ def seed_data(db: Session = None, reset: bool = False):
                 db.add(u)
 
         # 3. Official HS Codes (Chapters 33, 61, 62, 84, 85 from data/seed/hs_codes.csv)
-        import csv
-        import os
         hs_csv = "/srv/hermes-control/services/agentic-import/data/seed/hs_codes.csv"
         if os.path.exists(hs_csv):
             with open(hs_csv, encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for r in reader:
                     code_raw = r["code"].strip()
-                    # Format as dotted e.g. 8481.80.99
                     code_dotted = f"{code_raw[:4]}.{code_raw[4:6]}.{code_raw[6:]}" if len(code_raw) == 8 else code_raw
                     for hs_variant in [code_raw, code_dotted]:
                         h = db.query(HSCode).filter_by(hs_code=hs_variant).first()
@@ -126,7 +131,7 @@ def seed_data(db: Session = None, reset: bool = False):
             lr = db.query(LartasRuleEntity).filter_by(hs_prefix=prefix, requirement_key=req_key).first()
             if not lr:
                 lr = LartasRuleEntity(
-                    company_id=None,  # Official rule
+                    company_id=None,
                     hs_prefix=prefix,
                     requirement_key=req_key,
                     permit_name=name,
@@ -145,10 +150,10 @@ def seed_data(db: Session = None, reset: bool = False):
             ("PLC Control Panel Box Siemens S7-1200", "8537.10.19", {"voltase": "24V DC", "fungsi": "kontrol otomatis"}, "Papan kontrol programmable logic controller <= 1000V"),
         ]
         for desc, hs, attrs, notes in mem_data:
-            m = db.query(ClassificationMemory).filter_by(company_id=1, hs_code=hs).first()
+            m = db.query(ClassificationMemory).filter_by(company_id=comp.id, hs_code=hs).first()
             if not m:
                 m = ClassificationMemory(
-                    company_id=1,
+                    company_id=comp.id,
                     item_description=desc,
                     hs_code=hs,
                     matched_attributes=attrs,
@@ -160,11 +165,10 @@ def seed_data(db: Session = None, reset: bool = False):
 
         # 6. Skenario Demo Utama: MKN-011 (5 Barang Bab 84/85)
         now = datetime.now(UTC)
-        mkn_011 = db.query(Shipment).filter_by(shipment_number="MKN-011").first()
+        mkn_011 = db.query(Shipment).filter_by(company_id=comp.id, shipment_number="MKN-011").first()
         if not mkn_011:
             mkn_011 = Shipment(
-                id=11,
-                company_id=1,
+                company_id=comp.id,
                 shipment_number="MKN-011",
                 supplier_name="Shenzhen Packaging & Automation Co., Ltd.",
                 supplier_email="tim-impor@mitrakemas.co.id",
@@ -191,8 +195,8 @@ def seed_data(db: Session = None, reset: bool = False):
             ]
             for l_no, desc, qty, price, hs, conf, risk, st, approved in items_mkn11:
                 it = ShipmentItem(
-                    shipment_id=11,
-                    company_id=1,
+                    shipment_id=mkn_011.id,
+                    company_id=comp.id,
                     line_no=l_no,
                     description=desc,
                     quantity=Decimal(str(qty)),
@@ -212,9 +216,9 @@ def seed_data(db: Session = None, reset: bool = False):
                 # Add duty calculation row for item 1
                 if l_no == 1:
                     db.add(DutyCalculation(
-                        shipment_id=11,
+                        shipment_id=mkn_011.id,
                         item_id=it.id,
-                        company_id=1,
+                        company_id=comp.id,
                         cif_idr=Decimal("78940712.50"),
                         bm_percentage=Decimal("5.0"),
                         bm_idr=Decimal("3948000.00"),
@@ -229,18 +233,18 @@ def seed_data(db: Session = None, reset: bool = False):
                 # Clarification question for Item 4 (Katup Ambigu)
                 if l_no == 4:
                     db.add(Clarification(
-                        shipment_id=11,
+                        shipment_id=mkn_011.id,
                         item_id=it.id,
-                        company_id=1,
+                        company_id=comp.id,
                         question="Apakah katup pneumatic ini dilengkapi actuator solenoid terintegrasi dan bertekanan kerja di atas 10 bar?",
                         attribute="tekanan_kerja_dan_actuator",
                         reason="Diperlukan untuk membedakan pos 8481.80.90 (katup industri) vs 8481.20 (katup transmisi fluida hidrolik/pneumatik).",
                         status="open",
                     ))
                     db.add(ReviewTask(
-                        shipment_id=11,
+                        shipment_id=mkn_011.id,
                         item_id=it.id,
-                        company_id=1,
+                        company_id=comp.id,
                         review_type="hs_code",
                         status="pending",
                         notes="Perlu konfirmasi spesifikasi teknis katup pneumatic untuk menentukan pos 8481.80 atau 8481.20.",
@@ -248,8 +252,8 @@ def seed_data(db: Session = None, reset: bool = False):
 
             # Initial Documents for MKN-011
             db.add(Document(
-                shipment_id=11,
-                company_id=1,
+                shipment_id=mkn_011.id,
+                company_id=comp.id,
                 doc_type="INVOICE",
                 file_name="Invoice_MKN011_Shenzhen.pdf",
                 file_path="/srv/hermes-control/services/agentic-import/data/vault/Invoice_MKN011_Shenzhen.pdf",
@@ -257,8 +261,8 @@ def seed_data(db: Session = None, reset: bool = False):
                 status="provided",
             ))
             db.add(Document(
-                shipment_id=11,
-                company_id=1,
+                shipment_id=mkn_011.id,
+                company_id=comp.id,
                 doc_type="PACKING_LIST",
                 file_name="PackingList_MKN011.pdf",
                 file_path="/srv/hermes-control/services/agentic-import/data/vault/PackingList_MKN011.pdf",
@@ -266,8 +270,8 @@ def seed_data(db: Session = None, reset: bool = False):
                 status="provided",
             ))
             db.add(Document(
-                shipment_id=11,
-                company_id=1,
+                shipment_id=mkn_011.id,
+                company_id=comp.id,
                 doc_type="BL",
                 file_name="BillOfLading_OOCL_9921.pdf",
                 file_path="/srv/hermes-control/services/agentic-import/data/vault/BillOfLading_OOCL_9921.pdf",
@@ -275,21 +279,20 @@ def seed_data(db: Session = None, reset: bool = False):
                 status="provided",
             ))
             db.add(Document(
-                shipment_id=11,
-                company_id=1,
+                shipment_id=mkn_011.id,
+                company_id=comp.id,
                 doc_type="DATASHEET",
                 file_name="Datasheet_Pneumatic_Valve_Sample.pdf",
                 file_path="/srv/hermes-control/services/agentic-import/data/vault/Datasheet_Pneumatic_Valve_Sample.pdf",
                 file_size=154000,
-                status="missing",  # Sengaja missing agar juri dapat mengunggah datasheet contoh
+                status="missing",
             ))
 
         # 7. Skenario MKN-007 (Ready H+5, Pos 8481)
-        mkn_007 = db.query(Shipment).filter_by(shipment_number="MKN-007").first()
+        mkn_007 = db.query(Shipment).filter_by(company_id=comp.id, shipment_number="MKN-007").first()
         if not mkn_007:
             mkn_007 = Shipment(
-                id=7,
-                company_id=1,
+                company_id=comp.id,
                 shipment_number="MKN-007",
                 supplier_name="Global Valve Technologies Inc.",
                 supplier_email="tim-impor@mitrakemas.co.id",
@@ -306,8 +309,8 @@ def seed_data(db: Session = None, reset: bool = False):
             db.add(mkn_007)
             db.flush()
             db.add(ShipmentItem(
-                shipment_id=7,
-                company_id=1,
+                shipment_id=mkn_007.id,
+                company_id=comp.id,
                 line_no=1,
                 description="Industrial Gate Valves 8481",
                 quantity=Decimal(10),
@@ -322,11 +325,10 @@ def seed_data(db: Session = None, reset: bool = False):
             ))
 
         # 8. Skenario MKN-008 (Submitted H+14, Pos 8481)
-        mkn_008 = db.query(Shipment).filter_by(shipment_number="MKN-008").first()
+        mkn_008 = db.query(Shipment).filter_by(company_id=comp.id, shipment_number="MKN-008").first()
         if not mkn_008:
             mkn_008 = Shipment(
-                id=8,
-                company_id=1,
+                company_id=comp.id,
                 shipment_number="MKN-008",
                 supplier_name="Hydraulic & Pneumatic Systems Ltd.",
                 supplier_email="tim-impor@mitrakemas.co.id",
@@ -344,8 +346,8 @@ def seed_data(db: Session = None, reset: bool = False):
             db.add(mkn_008)
             db.flush()
             db.add(ShipmentItem(
-                shipment_id=8,
-                company_id=1,
+                shipment_id=mkn_008.id,
+                company_id=comp.id,
                 line_no=1,
                 description="High Pressure Regulating Valves 8481",
                 quantity=Decimal(15),
@@ -360,11 +362,10 @@ def seed_data(db: Session = None, reset: bool = False):
             ))
 
         # 9. Skenario MKN-003 (Arrived, Pos 8481)
-        mkn_003 = db.query(Shipment).filter_by(shipment_number="MKN-003").first()
+        mkn_003 = db.query(Shipment).filter_by(company_id=comp.id, shipment_number="MKN-003").first()
         if not mkn_003:
             mkn_003 = Shipment(
-                id=3,
-                company_id=1,
+                company_id=comp.id,
                 shipment_number="MKN-003",
                 supplier_name="Tokyo Valve Corporation",
                 supplier_email="tim-impor@mitrakemas.co.id",
@@ -383,8 +384,8 @@ def seed_data(db: Session = None, reset: bool = False):
             db.add(mkn_003)
             db.flush()
             db.add(ShipmentItem(
-                shipment_id=3,
-                company_id=1,
+                shipment_id=mkn_003.id,
+                company_id=comp.id,
                 line_no=1,
                 description="Brass Ball Valves 8481",
                 quantity=Decimal(50),
@@ -399,11 +400,11 @@ def seed_data(db: Session = None, reset: bool = False):
             ))
 
         db.commit()
-        print("Database initialized and seeded successfully for PT Mitra Kemas Nusantara (MKN-011, MKN-007, MKN-008, MKN-003)!")
+        print(f"Database initialized and seeded successfully for company {comp.id} (MKN-011, MKN-007, MKN-008, MKN-003)!")
     finally:
         if close_db:
             db.close()
 
 
 if __name__ == "__main__":
-    seed_data()
+    seed_data(reset=True)

@@ -15,3 +15,70 @@ def evaluate_shipment_watcher_eligibility(shipment: dict[str, Any], target_headi
     clean_target = target_heading.replace(".", "").strip()
 
     return bool(clean_target in shipment_heading or shipment_heading.startswith(clean_target))
+
+
+def find_affected_shipments_by_hs_prefix(
+    company_id: int,
+    hs_prefix: str,
+    db: Any = None,
+    cur: Any = None,
+) -> list[dict[str, Any]]:
+    """
+    Finds active shipments (not arrived) for a company that have items matching hs_prefix.
+    Supports either SQLAlchemy session (db) or raw database cursor (cur).
+    """
+    clean_prefix = hs_prefix.replace(".", "").strip()
+    results = []
+
+    if db is not None:
+        from src.models.entities import Shipment, ShipmentItem
+
+        shipments = (
+            db.query(Shipment)
+            .join(ShipmentItem, ShipmentItem.shipment_id == Shipment.id)
+            .filter(
+                Shipment.company_id == company_id,
+                Shipment.status != "arrived",
+            )
+            .all()
+        )
+        for s in shipments:
+            has_matching_item = False
+            for item in s.items:
+                proposed = (item.hs_code_proposed or "").replace(".", "").strip()
+                accepted = (item.hs_code_accepted or "").replace(".", "").strip()
+                if proposed.startswith(clean_prefix) or accepted.startswith(clean_prefix):
+                    has_matching_item = True
+                    break
+            if has_matching_item:
+                results.append({
+                    "shipment_id": s.id,
+                    "shipment_number": s.shipment_number,
+                    "status": s.status,
+                    "readiness_status": s.readiness_status,
+                })
+        return results
+
+    if cur is not None:
+        cur.execute("""
+            SELECT DISTINCT s.id, s.shipment_number, s.status, s.readiness_status
+            FROM shipments s
+            JOIN shipment_items i ON i.shipment_id = s.id
+            WHERE s.company_id = %s
+              AND s.status != 'arrived'
+              AND (
+                  replace(COALESCE(i.hs_code_proposed, ''), '.', '') LIKE %s
+                  OR replace(COALESCE(i.hs_code_accepted, ''), '.', '') LIKE %s
+              );
+        """, (int(company_id), f"{clean_prefix}%", f"{clean_prefix}%"))
+        rows = cur.fetchall()
+        for r in rows:
+            results.append({
+                "shipment_id": r[0],
+                "shipment_number": r[1],
+                "status": r[2],
+                "readiness_status": r[3],
+            })
+        return results
+
+    return results

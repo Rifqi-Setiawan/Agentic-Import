@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from src.api.deps import get_current_user, get_db_cursor
@@ -8,8 +8,10 @@ router = APIRouter(prefix="/reviews", tags=["reviews"])
 
 
 class DecisionRequest(BaseModel):
-    decision: str  # approve, modify, reject
+    decision: str | None = None  # approve, modify, reject
+    action: str | None = None
     modified_hs_code: str | None = None
+    suggested_hs: str | None = None
     notes: str | None = None
 
 
@@ -66,6 +68,13 @@ def submit_review_decision(
     user=Depends(get_current_user),
     cur=Depends(get_db_cursor)
 ):
+    user_role = user.get("role", "")
+    if user_role not in ("ppjk_reviewer", "reviewer", "admin", "superadmin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hanya reviewer atau admin yang berwenang mengambil keputusan review",
+        )
+
     cur.execute("""
         SELECT r.id, r.company_id, r.shipment_id, r.item_id, r.status,
                i.description, i.hs_code_accepted, i.hs_code_proposed
@@ -80,7 +89,7 @@ def submit_review_decision(
     r_id, comp_id, shipment_id, item_id, current_st, item_desc, hs_accepted, hs_proposed = row
     verify_company_access(str(comp_id), user["company_id"])
 
-    decision_clean = req.decision.lower()
+    decision_clean = (req.action or req.decision or "").strip().lower()
     if decision_clean not in ("approve", "modify", "reject"):
         raise HTTPException(status_code=400, detail="Keputusan harus 'approve', 'modify', atau 'reject'")
 
@@ -113,12 +122,21 @@ def submit_review_decision(
         }
 
     # Approve or Modify
-    final_hs = req.modified_hs_code if decision_clean == "modify" else None
-    if decision_clean == "modify" and not final_hs:
-        raise HTTPException(status_code=400, detail="modified_hs_code wajib diisi jika keputusan 'modify'")
+    final_hs = req.modified_hs_code or req.suggested_hs if decision_clean == "modify" else None
+    if decision_clean == "modify":
+        if not final_hs:
+            raise HTTPException(status_code=400, detail="modified_hs_code wajib diisi jika keputusan 'modify'")
+        clean_hs = final_hs.replace(".", "").strip()
+        if len(clean_hs) != 8 or not clean_hs.isdigit():
+            raise HTTPException(status_code=400, detail=f"Kode HS '{final_hs}' tidak valid. Harus 8 digit numerik.")
+        cur.execute("SELECT hs_code FROM hs_codes WHERE replace(hs_code, '.', '') = %s OR hs_code = %s LIMIT 1;", (clean_hs, final_hs))
+        if not cur.fetchone():
+            raise HTTPException(status_code=400, detail=f"Kode HS '{final_hs}' tidak ditemukan dalam katalog resmi BTKI")
 
     if decision_clean == "approve":
-        final_hs = hs_accepted or hs_proposed or "84223000"
+        final_hs = hs_accepted or hs_proposed
+        if not final_hs:
+            raise HTTPException(status_code=400, detail="Tidak ada kode HS usulan untuk disetujui")
 
     # Update item status
     cur.execute("""
@@ -140,6 +158,11 @@ def submit_review_decision(
         VALUES (%s, %s, %s, 'human_review', %s, true, NOW())
         RETURNING id;
     """, (comp_id, item_desc, final_hs, req.notes or f"Disetujui oleh {user['email']}"))
+
+    import json
+    cur.execute("""INSERT INTO jobs(company_id,shipment_id,event_type,dedupe_key,payload,status,created_at)
+        VALUES(%s,%s,'review_decision',%s,%s,'queued',NOW()) ON CONFLICT(dedupe_key) DO NOTHING""",
+        (comp_id, shipment_id, f"review:{review_id}:{decision_clean}", json.dumps({"mode":"recalc_only","target_item_ids":[item_id]})))
 
     return {
         "review_id": str(review_id),
