@@ -62,7 +62,7 @@ PYTHONPATH=. .venv/bin/python -m pytest tests/test_acceptance_protected.py tests
 PYTHONPATH=. .venv/bin/python tests/live_pipeline_smoke.py
 ```
 
-Suite audit v2 memasang guard dan dependency DB tes. Smoke live secara eksplisit memilih TEST_DATABASE_URL dan membuat fixture baru. Tes integrasi lama belum dijadikan perintah produksi: jangan menjalankan reset/simulate/approve terhadap demo aktif tanpa isolasi.
+Suite pengujian dilengkapi dengan guard isolasi sesi penuh (`tests/conftest.py`) yang secara ketat memaksa `TEST_DATABASE_URL` (`imporjaga_test`) sebelum modul tes di-load dan memverifikasi koneksi database aktif via raw connection dan SQLAlchemy engine.
 
 ### Sinkronisasi Katalog Referensi & Fixtures Demo
 
@@ -84,7 +84,7 @@ Perintah di atas:
 ### Verifikasi Lengkap Kandidat
 
 ```bash
-.venv/bin/python -m pytest -p no:cacheprovider tests/test_acceptance_protected.py tests/test_audit_api_regressions.py tests/test_audit_acceptance_v2.py tests/test_review_normalization.py tests/test_detail_readiness.py tests/test_reference_data_acceptance.py tests/test_reference_import_integration.py -q && .venv/bin/ruff check src scripts && /srv/apps/hermes/.local/bin/npm --prefix frontend run build
+.venv/bin/python -m pytest -p no:cacheprovider tests/test_acceptance_protected.py tests/test_audit_api_regressions.py tests/test_audit_acceptance_v2.py tests/test_review_normalization.py tests/test_detail_readiness.py tests/test_reference_data_acceptance.py tests/test_reference_import_integration.py -q && .venv/bin/ruff check src scripts tests && /srv/apps/hermes/.local/bin/npm --prefix frontend run build
 ```
 
 Sebelum deployment jalankan migrasi, build frontend, verifikasi kandidat dan restart hanya layanan ImporJaga. Backup sebelum remediasi tersedia di direktori backup VPS operator. Bukti audit awal dan perbaikan fixture dipertahankan di docs/.

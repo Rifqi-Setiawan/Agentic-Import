@@ -157,6 +157,7 @@ export function Reference({
 }) {
   const [query, setQuery] = useState("");
   const [rows, setRows] = useState<Row[]>([]);
+  const [officialReferences, setOfficialReferences] = useState<Row[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   async function search() {
@@ -168,6 +169,9 @@ export function Reference({
           : "/regulations",
       );
       setRows(list(result, kind === "hs" ? "results" : "regulations"));
+      if (kind === "regulations" && result && Array.isArray(result.official_references)) {
+        setOfficialReferences(result.official_references);
+      }
       setError("");
     } catch (e) {
       setError(String(e));
@@ -177,6 +181,7 @@ export function Reference({
   }
   useEffect(() => {
     setRows([]);
+    setOfficialReferences([]);
     setError("");
     if (kind === "regulations") search();
   }, [kind]);
@@ -257,7 +262,7 @@ export function Reference({
                   Tarif BM:{" "}
                   {r.bm_rate !== null && r.bm_rate !== undefined
                     ? `${r.bm_rate}%`
-                    : "Belum diverifikasi (NULL)"}
+                    : "Belum diverifikasi"}
                 </span>
                 {r.rate_status === "demo_unverified" && (
                   <span style={{ marginLeft: "8px", color: "#B45309", fontWeight: 500 }}>
@@ -296,6 +301,66 @@ export function Reference({
               ? "Masukkan deskripsi atau kode untuk mencari."
               : "Belum ada aturan."}
         </Empty>
+      )}
+      {kind === "regulations" && officialReferences.length > 0 && (
+        <section
+          style={{
+            marginTop: "24px",
+            borderTop: "1px solid #E5E7EB",
+            paddingTop: "16px",
+          }}
+        >
+          <h4
+            style={{
+              fontSize: "1.05em",
+              fontWeight: 600,
+              marginBottom: "6px",
+            }}
+          >
+            Referensi regulasi publik
+          </h4>
+          <p
+            className="muted"
+            style={{ fontSize: "0.85em", marginBottom: "14px" }}
+          >
+            Daftar bibliografi instrumen regulasi dan kepabeanan resmi (snapshot BTKI 2022 DJBC). Bersifat referensi publik (reference-only), terpisah dari aturan simulasi internal.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {officialReferences.map((ref, idx) => (
+              <article className="item" key={ref.number || idx}>
+                <h3>
+                  {ref.number} — {ref.title}
+                </h3>
+                {ref.scope && <p>{ref.scope}</p>}
+                <div
+                  className="muted"
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "10px",
+                    alignItems: "center",
+                    fontSize: "0.85em",
+                    marginTop: "6px",
+                  }}
+                >
+                  <Badge value="REFERENCE ONLY" />
+                  {ref.authority && <span>{ref.authority}</span>}
+                  <span>Snapshot: BTKI 2022 DJBC</span>
+                  {ref.source_url && (
+                    <a
+                      href={ref.source_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: "#2563EB", textDecoration: "underline" }}
+                    >
+                      Buka dokumen resmi ↗
+                    </a>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
       )}
     </Card>
   );

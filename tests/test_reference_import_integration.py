@@ -277,3 +277,135 @@ def test_additive_twice_import_preserves_modified_seed_and_unrelated_company():
                 cur.execute("DELETE FROM shipments WHERE company_id IN (%s, %s);", (comp_a_id, comp_b_id))
                 cur.execute("DELETE FROM companies WHERE id IN (%s, %s);", (comp_a_id, comp_b_id))
             conn.commit()
+
+
+def test_session_wide_test_db_isolation():
+    """Verify session-wide test isolation fence binding to imporjaga_test."""
+    assert settings.DATABASE_URL == settings.TEST_DATABASE_URL
+    assert "imporjaga_test" in settings.DATABASE_URL
+    with psycopg.connect(settings.DATABASE_URL) as conn, conn.cursor() as cur:
+        cur.execute("SELECT current_database();")
+        assert cur.fetchone()[0] == "imporjaga_test"
+
+    from src.core.database import get_engine
+    from sqlalchemy import text
+    eng = get_engine()
+    with eng.connect() as conn:
+        assert conn.execute(text("SELECT current_database();")).scalar() == "imporjaga_test"
+
+
+def test_offline_catalog_retrieval_benchmarks():
+    """Verify offline candidate retrieval rankings for benchmark items.
+
+    Ensures:
+    1. Inductive proximity sensor -> ranks 8536 / 85365099 at the top (not wire machinery 8463).
+    2. Centrifugal water pump -> ranks 8413 / 841370 at the top.
+    3. AC induction motor -> ranks 8501 (e.g. 850152 / 850151) at the top.
+    """
+    from src.services.analysis import search_candidates
+
+    class DummyRepo:
+        def rows(self, sql, params=()):
+            with psycopg.connect(settings.TEST_DATABASE_URL) as conn, conn.cursor() as cur:
+                cur.execute(sql, params)
+                cols = [desc[0] for desc in cur.description]
+                return [dict(zip(cols, r)) for r in cur.fetchall()]
+
+    repo = DummyRepo()
+
+    # Benchmark 1: Inductive Proximity Sensor
+    res_sensor = search_candidates(repo, "INDUCTIVE PROXIMITY SENSOR M12 24VDC PNP 3 WIRE", limit=8)
+    codes_sensor = [r["hs_code"] for r in res_sensor]
+    assert len(codes_sensor) > 0
+    assert any(c.startswith("8536") for c in codes_sensor), f"Expected heading 8536 in candidates, got {codes_sensor}"
+    assert "85365099" in codes_sensor, f"Expected 85365099 in sensor candidates, got {codes_sensor}"
+    assert not any(c.startswith("8463") for c in codes_sensor), f"Wire machinery 8463 must not swamp sensor candidates: {codes_sensor}"
+
+    # Benchmark 2: Centrifugal Water Pump
+    res_pump = search_candidates(repo, "CENTRIFUGAL WATER PUMP 2.2 KW 220V INDUSTRIAL", limit=8)
+    codes_pump = [r["hs_code"] for r in res_pump]
+    assert len(codes_pump) > 0
+    assert any(c.startswith("841370") or c.startswith("8413") for c in codes_pump), f"Expected heading 8413 in pump candidates, got {codes_pump}"
+
+    # Benchmark 3: Electric AC Induction Motor
+    res_motor = search_candidates(repo, "ELECTRIC AC INDUCTION MOTOR THREE PHASE 5.5 KW 380V", limit=8)
+    codes_motor = [r["hs_code"] for r in res_motor]
+    assert len(codes_motor) > 0
+    assert any(c.startswith("8501") for c in codes_motor), f"Expected heading 8501 in motor candidates, got {codes_motor}"
+
+
+def test_hs_search_canonical_deduplication_and_scope():
+    """Verify search endpoint deduplicates canonical codes before limit and get_hs_detail isolates company SIM rules."""
+    from fastapi.testclient import TestClient
+    from src.api.main import app
+    from src.api.auth import create_access_token
+
+    with psycopg.connect(settings.TEST_DATABASE_URL) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO companies (name, npwp, is_active, created_at)
+                VALUES ('TEST-HS-SEARCH-CO-A', '01.999.888.7-333.000', true, NOW())
+                RETURNING id;
+            """)
+            co_a_id = cur.fetchone()[0]
+
+            cur.execute("""
+                INSERT INTO companies (name, npwp, is_active, created_at)
+                VALUES ('TEST-HS-SEARCH-CO-B', '01.999.888.7-444.000', true, NOW())
+                RETURNING id;
+            """)
+            co_b_id = cur.fetchone()[0]
+
+            cur.execute("""
+                INSERT INTO users (email, full_name, password_hash, company_id, role, is_active, created_at)
+                VALUES ('user-hs-a@example.com', 'User A Staff', 'dummy_hash', %s, 'staff', true, NOW())
+                RETURNING id;
+            """, (co_a_id,))
+            user_a_id = cur.fetchone()[0]
+
+            # Insert private simulation rule for Company B under heading 8536
+            cur.execute("""
+                INSERT INTO lartas_rules (
+                    hs_prefix, requirement_key, permit_name, issuing_agency,
+                    company_id, is_active, rule_group, source
+                )
+                VALUES ('8536', 'SIM_PRIVATE_B_SENSOR', 'Izin Khusus Sensor Co B', 'Kementerian B', %s, true, 'SIMULASI', 'Simulasi Demo')
+                RETURNING id;
+            """, (co_b_id,))
+            rule_b_id = cur.fetchone()[0]
+        conn.commit()
+
+    try:
+        token_a = create_access_token({
+            "sub": str(user_a_id),
+            "company_id": str(co_a_id),
+            "email": "user-hs-a@example.com",
+            "role": "staff",
+        })
+        client = TestClient(app)
+
+        # 1. Search deduplication test
+        res = client.get("/api/v1/hs-codes/search?q=33012920&limit=10", headers={"Authorization": f"Bearer {token_a}"})
+        assert res.status_code == 200, res.text
+        data = res.json().get("data", [])
+        codes = [item["hs_code"] for item in data]
+        # Each canonical code must appear at most once
+        assert len(codes) == len(set(codes)), f"Search results contained duplicates: {codes}"
+        for item in data:
+            assert "." not in item["hs_code"], f"Expected canonical hs_code without dots: {item['hs_code']}"
+            assert item.get("code_canonical") == item["hs_code"]
+
+        # 2. Company isolation in get_hs_detail: Company B's SIM rule must NOT leak to Company A
+        res_detail = client.get("/api/v1/hs-codes/85365099", headers={"Authorization": f"Bearer {token_a}"})
+        assert res_detail.status_code == 200, res_detail.text
+        rules = res_detail.json().get("lartas_rules", [])
+        rule_keys = [r.get("requirement_key") for r in rules]
+        assert "SIM_PRIVATE_B_SENSOR" not in rule_keys, f"Private Company B rule leaked to Company A: {rule_keys}"
+
+    finally:
+        with psycopg.connect(settings.TEST_DATABASE_URL) as conn:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM lartas_rules WHERE id = %s;", (rule_b_id,))
+                cur.execute("DELETE FROM users WHERE id = %s;", (user_a_id,))
+                cur.execute("DELETE FROM companies WHERE id IN (%s, %s);", (co_a_id, co_b_id))
+            conn.commit()

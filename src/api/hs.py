@@ -15,32 +15,38 @@ def search_hs(
 ):
     clean_q = f"%{q.strip()}%"
     clean_nodot = f"%{q.strip().replace('.', '')}%"
+    fetch_limit = limit * 5
     if chapter:
         cur.execute("""
             SELECT hs_code, description_id, description_en, bm_rate, lartas_coverage
             FROM hs_codes
             WHERE hs_code LIKE %s AND (description_id ILIKE %s OR description_en ILIKE %s OR hs_code ILIKE %s OR replace(hs_code, '.', '') ILIKE %s)
             LIMIT %s;
-        """, (f"{chapter}%", clean_q, clean_q, clean_q, clean_nodot, limit * 2))
+        """, (f"{chapter}%", clean_q, clean_q, clean_q, clean_nodot, fetch_limit))
     else:
         cur.execute("""
             SELECT hs_code, description_id, description_en, bm_rate, lartas_coverage
             FROM hs_codes
             WHERE description_id ILIKE %s OR description_en ILIKE %s OR hs_code ILIKE %s OR replace(hs_code, '.', '') ILIKE %s
             LIMIT %s;
-        """, (clean_q, clean_q, clean_q, clean_nodot, limit * 2))
+        """, (clean_q, clean_q, clean_q, clean_nodot, fetch_limit))
     rows = cur.fetchall()
 
     data = []
+    seen_codes = set()
     for r in rows:
         code_nodot = r[0].replace(".", "").strip()
         # Enforce catalog membership: exclude invalid legacy codes like 33012910
         if not is_official_hs_code(code_nodot):
             continue
+        if code_nodot in seen_codes:
+            continue
+        seen_codes.add(code_nodot)
         official_info = get_official_hs_code(code_nodot)
         bm = float(r[3]) if r[3] is not None else None
         data.append({
-            "hs_code": r[0],
+            "hs_code": code_nodot,
+            "code_canonical": code_nodot,
             "description_id": official_info["description_id"] if official_info else r[1],
             "description_en": official_info["description_en"] if official_info else r[2],
             "bm_rate": bm,
@@ -76,13 +82,15 @@ def get_hs_detail(
     """, (code_nodot, code))
     row = cur.fetchone()
 
-    # Fetch matching lartas rules
+    # Fetch matching lartas rules scoped to global or current user company
     clean_prefix = code_nodot[:4]
+    user_company_id = int(user["company_id"]) if user and user.get("company_id") else None
     cur.execute("""
         SELECT requirement_key, permit_name, issuing_agency, rule_group
         FROM lartas_rules
-        WHERE hs_prefix = %s AND is_active = true;
-    """, (clean_prefix,))
+        WHERE hs_prefix = %s AND is_active = true
+          AND (company_id IS NULL OR company_id = %s);
+    """, (clean_prefix, user_company_id))
     rules = cur.fetchall()
 
     bm_rate = float(row[3]) if row and row[3] is not None else None

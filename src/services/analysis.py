@@ -1,7 +1,9 @@
 """Operational analysis nodes. Model decisions are validated before persistence."""
 import hashlib
 import json
+import math
 import re
+from collections import Counter
 from decimal import Decimal
 from pathlib import Path
 
@@ -154,23 +156,137 @@ def plan_shipment(state):
         return {"plan": plan}
 
 
+def _stem(word: str) -> str:
+    w = word.lower()
+    if len(w) > 4 and w.endswith("ies"):
+        return w[:-3] + "y"
+    if len(w) > 4 and w.endswith("es") and (w.endswith("shes") or w.endswith("ches") or w.endswith("xes") or w.endswith("sses")):
+        return w[:-2]
+    if len(w) > 3 and w.endswith("s") and not w.endswith("ss"):
+        return w[:-1]
+    return w
+
+
+def _tokenize(text: str) -> set[str]:
+    raw = re.findall(r"[a-z0-9]{3,}", (text or "").lower())
+    return {_stem(w) for w in raw}
+
+
+SYNONYMS_MAP: dict[str, set[str]] = {
+    "sensor": {"sensor", "sakelar", "switch", "detektor"},
+    "inductive": {"induktif", "inductive", "kedekatan", "proximity", "sakelar", "switch"},
+    "proximity": {"kedekatan", "proximity", "sensor", "sakelar", "switch"},
+    "switch": {"sakelar", "switch"},
+    "sakelar": {"sakelar", "switch"},
+    "pump": {"pompa", "pump", "sentrifugal", "centrifugal"},
+    "pompa": {"pompa", "pump"},
+    "centrifugal": {"sentrifugal", "centrifugal", "pompa", "pump"},
+    "sentrifugal": {"sentrifugal", "centrifugal"},
+    "motor": {"motor", "generator", "penggerak"},
+    "electric": {"listrik", "electric", "elektrik"},
+    "listrik": {"listrik", "electric", "elektrik"},
+    "valve": {"katup", "valve"},
+    "katup": {"katup", "valve"},
+    "cotton": {"kapas", "cotton"},
+    "shirt": {"kemeja", "shirt"},
+    "sealing": {"pengemas", "penyegel", "sealing"},
+    "packaging": {"pengemas", "pembungkus", "packaging"},
+}
+
+GENERIC_HEADING_TERMS = {
+    "wire", "kabel", "kawat", "aparatu", "apparatus", "mesin", "machin",
+    "part", "bagian", "articl", "barang", "other", "lain"
+}
+
+
 def search_candidates(repo, description: str, limit=8):
-    codes = repo.rows("SELECT hs_code,description_id,description_en,bm_rate,ppn_rate,pph_rate,lartas_coverage,source FROM hs_codes ORDER BY hs_code")
-    valid_codes = []
-    for row in codes:
-        clean_code = str(row["hs_code"]).replace(".", "")
-        if is_official_hs_code(clean_code):
-            row["hs_code"] = clean_code
-            valid_codes.append(row)
-    codes = valid_codes
-    words = set(re.findall(r"[a-z0-9]{3,}", description.lower()))
-    # Retrieval is explicitly lexical; model compares the returned descriptions semantically.
-    synonyms = {"valve": "katup", "electric": "listrik", "pump": "pompa", "sensor": "sensor", "cotton": "kapas", "shirt": "kemeja", "sealing": "pengemas"}
-    words |= {synonyms[word] for word in list(words) if word in synonyms}
-    def score(row):
-        terms = set(re.findall(r"[a-z0-9]{3,}", (row["description_id"] + " " + (row["description_en"] or "")).lower()))
-        return len(words & terms)
-    return sorted(codes, key=lambda row: (-score(row), row["hs_code"]))[:limit]
+    rows = repo.rows("SELECT hs_code,description_id,description_en,bm_rate,ppn_rate,pph_rate,lartas_coverage,source FROM hs_codes ORDER BY hs_code")
+    # Normalized and canonical deduplication
+    deduped_catalog = {}
+    for r in rows:
+        clean_code = str(r["hs_code"]).replace(".", "").strip()
+        if is_official_hs_code(clean_code) and clean_code not in deduped_catalog:
+            r_copy = dict(r)
+            r_copy["hs_code"] = clean_code
+            deduped_catalog[clean_code] = r_copy
+
+    if not deduped_catalog:
+        return []
+
+    num_docs = len(deduped_catalog)
+    doc_data = []
+    df = Counter()
+    for code, r in deduped_catalog.items():
+        segs_id = [s.strip() for s in r["description_id"].split("|")]
+        segs_en = [s.strip() for s in (r.get("description_en") or "").split("|")]
+
+        h_toks = _tokenize((segs_id[0] if segs_id else "") + " " + (segs_en[0] if segs_en else ""))
+        sub_toks = _tokenize(" ".join(segs_id[1:2]) + " " + " ".join(segs_en[1:2]))
+        leaf_toks = _tokenize(" ".join(segs_id[2:]) + " " + " ".join(segs_en[2:]))
+        if not leaf_toks:
+            leaf_toks = sub_toks
+
+        all_toks = h_toks | sub_toks | leaf_toks
+        for t in all_toks:
+            df[t] += 1
+        doc_data.append((code, r, h_toks, sub_toks, leaf_toks))
+
+    def idf(term: str) -> float:
+        freq = df.get(term, 0)
+        return math.log(1 + (num_docs - freq + 0.5) / (freq + 0.5))
+
+    raw_q = set(re.findall(r"[a-z0-9]{3,}", description.lower()))
+    stemmed_q = {_stem(w) for w in raw_q}
+
+    query_weights: dict[str, float] = {}
+    for w in stemmed_q:
+        query_weights[w] = 1.0
+        if w in SYNONYMS_MAP:
+            for syn in SYNONYMS_MAP[w]:
+                st = _stem(syn)
+                if st not in query_weights:
+                    query_weights[st] = 0.85
+
+    scored = []
+    for code, r, h_toks, sub_toks, leaf_toks in doc_data:
+        score = 0.0
+        matches = 0
+        for term, weight in query_weights.items():
+            term_idf = idf(term)
+            if term_idf <= 0:
+                continue
+
+            matched = False
+            if term in leaf_toks:
+                score += 3.5 * term_idf * weight
+                matched = True
+            elif term in sub_toks:
+                score += 2.5 * term_idf * weight
+                matched = True
+            elif term in h_toks:
+                if term in GENERIC_HEADING_TERMS:
+                    score += 0.1 * term_idf * weight
+                else:
+                    score += 1.0 * term_idf * weight
+                matched = True
+
+            if matched:
+                matches += 1
+
+        if matches > 1:
+            score *= (1.0 + 0.25 * (matches - 1))
+
+        # Tie-breaker / general basket boost: codes ending in 99 or 90 are residual basket codes
+        if code.endswith("99"):
+            score += 0.05
+        elif code.endswith("90"):
+            score += 0.03
+
+        if score > 0:
+            scored.append((score, code, r))
+
+    scored.sort(key=lambda x: (-x[0], x[1]))
+    return [item[2] for item in scored[:limit]]
 
 
 def tool(name, properties, required, description):
@@ -209,7 +325,7 @@ def classify_one(repo, item, documents, shipment):
                "Jika bukti cukup, langsung submit_classification pada giliran pertama. Maksimal satu pencarian tambahan bila semua kandidat tidak relevan. "
                "Maksimal tiga giliran model: segera putuskan atau bertanya, jangan mengulang pencarian.")
     def public_candidate(row):
-        return {key: (str(row.get(key) or "")[:450] if key.startswith("description") else row.get(key))
+        return {key: row.get(key)
                 for key in ("hs_code", "description_id", "description_en", "source")}
 
     messages = [{"role": "system", "content": system}, {"role": "user", "content": json.dumps({
