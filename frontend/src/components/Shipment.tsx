@@ -41,6 +41,7 @@ export function Shipment({
         items: (data.items || []).map((item: Row) => ({
           ...item,
           ...evidence[String(item.id)],
+          hs_code: item.hs_code_accepted || item.hs_code || evidence[String(item.id)]?.hs_code,
         })),
       });
       setError("");

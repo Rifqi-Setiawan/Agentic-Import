@@ -170,7 +170,7 @@ def get_shipment_detail(shipment_id: str, user=Depends(get_current_user), cur=De
 
     cur.execute("""
         SELECT i.id, i.line_no, i.description, i.quantity, i.uom, i.unit_price, i.total_price_cif, i.status,
-               i.hs_code_proposed, i.confidence_score, i.is_approved
+               i.hs_code_proposed, i.confidence_score, i.is_approved, i.hs_code_accepted
         FROM shipment_items i
         WHERE i.shipment_id = %s
         ORDER BY i.line_no ASC;
@@ -213,7 +213,8 @@ def get_shipment_detail(shipment_id: str, user=Depends(get_current_user), cur=De
             "total_price": float(it[6]),
             "total_price_cif": float(it[6]),
             "status": it_status,
-            "hs_code": it[8],
+            "hs_code": it[11] or it[8],
+            "hs_code_accepted": it[11],
             "hs_code_proposed": it[8],
             "confidence_score": float(it[9]) if it[9] is not None else None,
             "is_approved": is_appr,

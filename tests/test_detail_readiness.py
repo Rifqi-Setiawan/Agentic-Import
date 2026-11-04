@@ -21,7 +21,7 @@ def test_detail_includes_missing_requirements_reviews_and_active_analysis():
                 self.rows = [(1, 1, "QA", "QA", "Fictional", "qa@example.invalid", "IDR", 100,
                     "needs_documents", "incomplete", 1, None, None, now)]
             elif "from shipment_items i" in q:
-                self.rows = [(1, 1, "Sensor", 1, "PCS", 100, 100, "approved", "85437090", None, True)]
+                self.rows = [(1, 1, "Sensor", 1, "PCS", 100, 100, "approved", "85437090", None, True, "85365099")]
             elif "from documents d" in q:
                 self.rows = [(1, "INVOICE", "qa.pdf", 100, "provided", now)]
             elif "from checklist_items" in q:
@@ -50,3 +50,6 @@ def test_detail_includes_missing_requirements_reviews_and_active_analysis():
     assert detail["pending_job_count"] == 1
     assert any("Packing list" in issue for issue in detail["blocking_issues"])
     assert any("review" in issue for issue in detail["blocking_issues"])
+    assert detail["items"][0]["hs_code"] == "85365099"
+    assert detail["items"][0]["hs_code_proposed"] == "85437090"
+    assert detail["items"][0]["hs_code_accepted"] == "85365099"
