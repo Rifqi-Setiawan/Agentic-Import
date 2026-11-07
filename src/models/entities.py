@@ -23,6 +23,8 @@ class Company(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     npwp = Column(String(50), nullable=True)
+    has_api = Column(Boolean, nullable=True)
+    autonomy_level = Column(String(10), nullable=False, default="assist", server_default="assist")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
@@ -59,6 +61,9 @@ class Shipment(Base):
     bl_number = Column(String(100), nullable=True)
     invoice_number = Column(String(100), nullable=True)
     currency = Column(String(10), default="USD")
+    incoterm = Column(String(3), nullable=True)
+    freight_value = Column(Numeric(18, 2), nullable=True)
+    insurance_value = Column(Numeric(18, 2), nullable=True)
     exchange_rate = Column(Numeric(15, 2), default=16000.00)
     cif_total_idr = Column(Numeric(18, 2), default=0.00)
     total_duty_idr = Column(Numeric(18, 2), default=0.00)
@@ -95,6 +100,7 @@ class ShipmentItem(Base):
 
     hs_code_proposed = Column(String(20), nullable=True)
     hs_code_accepted = Column(String(20), nullable=True)
+    approval_origin = Column(String(32), nullable=True)
     confidence_score = Column(Numeric(5, 4), nullable=True)
     risk_level = Column(String(50), default="low")  # low, medium, high
     status = Column(String(50), default="draft")  # draft, classified, needs_clarification, review, approved, rejected, out_of_scope

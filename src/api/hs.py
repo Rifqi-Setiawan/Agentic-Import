@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from src.api.deps import get_current_user, get_db_cursor
 from src.core.catalog import get_official_hs_code, is_official_hs_code
+from src.core.import_rates import verified_demo_rate
+
+from src.services.hs_search import HS_SEARCH_COLUMNS, rank_hs_codes
 
 router = APIRouter(prefix="/hs-codes", tags=["hs-codes"])
 
@@ -13,52 +16,30 @@ def search_hs(
     user=Depends(get_current_user),
     cur=Depends(get_db_cursor),
 ):
-    clean_q = f"%{q.strip()}%"
-    clean_nodot = f"%{q.strip().replace('.', '')}%"
-    fetch_limit = limit * 5
-    if chapter:
-        cur.execute("""
-            SELECT hs_code, description_id, description_en, bm_rate, lartas_coverage
-            FROM hs_codes
-            WHERE hs_code LIKE %s AND (description_id ILIKE %s OR description_en ILIKE %s OR hs_code ILIKE %s OR replace(hs_code, '.', '') ILIKE %s)
-            LIMIT %s;
-        """, (f"{chapter}%", clean_q, clean_q, clean_q, clean_nodot, fetch_limit))
-    else:
-        cur.execute("""
-            SELECT hs_code, description_id, description_en, bm_rate, lartas_coverage
-            FROM hs_codes
-            WHERE description_id ILIKE %s OR description_en ILIKE %s OR hs_code ILIKE %s OR replace(hs_code, '.', '') ILIKE %s
-            LIMIT %s;
-        """, (clean_q, clean_q, clean_q, clean_nodot, fetch_limit))
-    rows = cur.fetchall()
-
+    cur.execute(f"""SELECT {HS_SEARCH_COLUMNS} FROM hs_codes
+        WHERE %s::text IS NULL OR left(replace(hs_code, '.', ''), 2) = %s
+        ORDER BY (hs_code=replace(hs_code,'.','')) DESC,hs_code""", (chapter, chapter))
+    rows = (dict(zip(HS_SEARCH_COLUMNS.split(","), row, strict=True)) for row in cur.fetchall())
     data = []
-    seen_codes = set()
-    for r in rows:
-        code_nodot = r[0].replace(".", "").strip()
-        # Enforce catalog membership: exclude invalid legacy codes like 33012910
-        if not is_official_hs_code(code_nodot):
-            continue
-        if code_nodot in seen_codes:
-            continue
-        seen_codes.add(code_nodot)
+    for row in rank_hs_codes(rows, q, limit):
+        code_nodot = row["hs_code"]
         official_info = get_official_hs_code(code_nodot)
-        bm = float(r[3]) if r[3] is not None else None
+        bm = float(row["bm_rate"]) if row["bm_rate"] is not None else None
+        tariff = verified_demo_rate(code_nodot, row["bm_rate"])
         data.append({
             "hs_code": code_nodot,
             "code_canonical": code_nodot,
-            "description_id": official_info["description_id"] if official_info else r[1],
-            "description_en": official_info["description_en"] if official_info else r[2],
+            "description_id": row["description_id"],
+            "description_en": row["description_en"],
             "bm_rate": bm,
-            "rate_status": "demo_unverified" if bm is not None else "unverified",
-            "lartas_coverage": r[4] or "unknown",
+            "rate_status": "verified_demo" if tariff else "demo_unverified" if bm is not None else "unverified",
+            "rate_source": tariff["source"] if tariff else None,
+            "lartas_coverage": row["lartas_coverage"] or "unknown",
             "source_url": official_info["source_url"] if official_info else None,
             "source_page": official_info["source_page"] if official_info else None,
             "lartas_verified": False,
             "current_rates_verified": False,
         })
-        if len(data) >= limit:
-            break
     return {"data": data, "results": data}
 
 
@@ -78,24 +59,24 @@ def get_hs_detail(
     cur.execute("""
         SELECT hs_code, description_id, description_en, bm_rate, ppn_rate, pph_rate, lartas_coverage, source
         FROM hs_codes
-        WHERE replace(hs_code, '.', '') = %s OR hs_code = %s;
-    """, (code_nodot, code))
+        WHERE replace(hs_code, '.', '') = %s ORDER BY (hs_code=%s) DESC, id LIMIT 1;
+    """, (code_nodot, code_nodot))
     row = cur.fetchone()
 
     # Fetch matching lartas rules scoped to global or current user company
-    clean_prefix = code_nodot[:4]
     user_company_id = int(user["company_id"]) if user and user.get("company_id") else None
     cur.execute("""
         SELECT requirement_key, permit_name, issuing_agency, rule_group
         FROM lartas_rules
-        WHERE hs_prefix = %s AND is_active = true
+        WHERE %s LIKE replace(hs_prefix,'.','') || '%%' AND is_active = true AND effective_date<=NOW()
           AND (company_id IS NULL OR company_id = %s);
-    """, (clean_prefix, user_company_id))
+    """, (code_nodot, user_company_id))
     rules = cur.fetchall()
 
     bm_rate = float(row[3]) if row and row[3] is not None else None
     ppn_rate = float(row[4]) if row and row[4] is not None else None
     pph_rate = float(row[5]) if row and row[5] is not None else None
+    tariff = verified_demo_rate(code_nodot, row[3]) if row else None
 
     return {
         "hs_code": row[0] if row else code_nodot,
@@ -105,7 +86,8 @@ def get_hs_detail(
         "bm_rate": bm_rate,
         "ppn_rate": ppn_rate,
         "pph_rate": pph_rate,
-        "rate_status": "demo_unverified" if bm_rate is not None else "unverified",
+        "rate_status": "verified_demo" if tariff else "demo_unverified" if bm_rate is not None else "unverified",
+        "rate_source": tariff["source"] if tariff else None,
         "lartas_coverage": row[6] if row else "unknown",
         "source": "BTKI 2022 DJBC",
         "source_url": official_info["source_url"] if official_info else None,

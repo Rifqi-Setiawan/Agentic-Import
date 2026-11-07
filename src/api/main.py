@@ -58,7 +58,7 @@ if os.path.isdir(demo_doc_dir):
     app.mount("/data/demo/documents", StaticFiles(directory=demo_doc_dir), name="demo-documents")
 
 # Static frontend serving
-frontend_dist = "/srv/hermes-control/services/agentic-import/frontend/dist"
+frontend_dist = settings.FRONTEND_DIST_PATH
 if os.path.exists(frontend_dist):
     assets_dir = os.path.join(frontend_dist, "assets")
     if os.path.exists(assets_dir):

@@ -1,61 +1,61 @@
 id,chapter,difficulty,description,expected_hs8,acceptable_hs8,clarification_answer,labeled_by,note
-E001,84,easy,AUTOMATIC ROTARY PLASTIC BAG SEALING MACHINE 220V 50HZ,84223000,84224000,,Tim;PPJK,Mesin segel kantong plastik otomatis
-E002,84,easy,BALL VALVE 2 INCH CAST IRON FLANGED CLASS 150,84818014,84818099,,Tim;PPJK,Katup bola besi
-E003,84,easy,GATE VALVE DN100 PN16 CAST STEEL BODY,84818015,84818099,,Tim;PPJK,Katup gerbang baja
-E004,84,easy,HORIZONTAL WATER CENTRIFUGAL PUMP 3KW,84137091,,,Tim;PPJK,Pompa sentrifugal air 3kW
-E005,84,medium,CHECK VALVE WAFER TYPE DUCTILE IRON DN80,84813090,84818014,,Tim;PPJK,Katup searah non-return
-E006,84,medium,PRESSURE REDUCING REGULATOR VALVE BRASS 1/2 INCH,84811099,,,Tim;PPJK,Katup penurun tekanan
-E007,84,medium,HIGH PRESSURE PNEUMATIC CONTROL ACTUATED VALVE,84812090,84818099,,Tim;PPJK,Katup pneumatik transmisi
-E008,84,medium,BRASS BALL VALVE 1 INCH THREADED SCREW BSPT,84818011,,,Tim;PPJK,Katup bola kuningan
-E009,84,medium,CONTINUOUS HEAT SHRINK WRAPPING MACHINE FOR CARTONS,84224000,84223000,,Tim;PPJK,Mesin pembungkus karton
-E010,84,hard,INDUSTRIAL PROCESS FLOW VALVE MODEL VK-200,84818014,84818099,Katup bola dengan badan cast iron,Tim;PPJK,Perlu klarifikasi tipe katup dan bahan bodi
-E011,84,hard,SHUTOFF CONTROL VALVE FLANGE CONNECTION DN50,84818015,84818099,Gate valve dengan material stainless steel,Tim;PPJK,Perlu klarifikasi jenis katup dan bahan
-E012,84,hard,LIQUID DOSING VALVE WITH ACTUATOR,84812090,84818099,Katup pneumatik kontrol cairan,Tim;PPJK,Perlu klarifikasi mekanisme kerja penggerak
-E013,85,easy,THREE PHASE AC INDUCTION MOTOR 5.5KW 380V 50HZ 4 POLE,85015219,,,Tim;PPJK,Motor induksi 3 fase 5.5 kW
-E014,85,easy,THREE PHASE INDUCTION MOTOR 15KW 380V 1450RPM,85015229,,,Tim;PPJK,Motor induksi 3 fase 15 kW
-E015,85,easy,PLC MAIN AUTOMATION CONTROL PANEL 380V FOR PACKAGING LINE,85371099,,,Tim;PPJK,Panel kontrol PLC
-E016,85,easy,INDUCTIVE PROXIMITY SENSOR SWITCH 24VDC NPN NO M12,85437090,,,Tim;PPJK,Sensor proximity induktif
-E017,85,medium,ELECTRIC MOTOR SQUIRREL CAGE 3KW 400V,85015219,,,Tim;PPJK,Motor induksi sangkar tupai 3kW
-E018,85,medium,HEAVY DUTY DRIVE MOTOR 30KW 380V TEFC,85015229,,,Tim;PPJK,Motor AC industri 30kW
-E019,85,medium,MOTOR CONTROL CENTER MCC PANEL CABINET 415V,85371099,,,Tim;PPJK,Kabinet panel MCC kontrol listrik
-E020,85,medium,CAPACITIVE PROXIMITY SENSOR M18 10-30VDC,85437090,,,Tim;PPJK,Sensor kapasitif 24V
-E021,85,medium,OPTICAL PHOTOELECTRIC SENSOR THRU-BEAM 24V,85437090,,,Tim;PPJK,Sensor fotolistrik
-E022,85,hard,ELECTRIC DRIVE UNIT MODEL EDM-550,85015219,85015229,Motor AC 3 fase daya 5.5 kW,Tim;PPJK,Perlu klarifikasi spesifikasi daya dan tipe motor
-E023,85,hard,AUTOMATION DISTRIBUTION BOARD PANEL UNIT,85371099,,Panel kontrol voltase 380V untuk otomasi mesin,Tim;PPJK,Perlu klarifikasi tegangan dan fungsi panel
-E024,85,hard,INDUSTRIAL DETECTION PROBE SENSOR MODULE,85437090,,Sensor proximity induktif untuk deteksi logam,Tim;PPJK,Perlu klarifikasi jenis pendeteksian sensor
-E025,33,easy,MATTE LIPSTICK RED VELVET 3.8G,33041000,,,Tim;PPJK,Lipstik kosmetik bibir
-E026,33,easy,LIQUID WATERPROOF EYELINER BLACK 2.5ML,33042000,,,Tim;PPJK,Rias mata eyeliner
-E027,33,easy,FACIAL HYDRATING SERUM HYALURONIC ACID 30ML,33049930,,,Tim;PPJK,Serum perawatan kulit wajah
-E028,33,easy,ANTI DANDRUFF HAIR SHAMPOO 250ML,33051000,,,Tim;PPJK,Sampo rambut anti ketombe
-E029,33,medium,LIP GLOSS SHINE FINISH WITH VITAMIN E,33041000,,,Tim;PPJK,Lip gloss bibir
-E030,33,medium,EYE SHADOW PALETTE 12 COLORS COSMETICS,33042000,,,Tim;PPJK,Eye shadow palet mata
-E031,33,medium,NIGHT REPAIR FACE MOISTURIZER CREAM 50G,33049930,,,Tim;PPJK,Krim pelembab wajah
-E032,33,medium,ROLL-ON DEODORANT ANTIPERSPIRANT 50ML,33072000,,,Tim;PPJK,Deodoran ketiak roll-on
-E033,33,medium,BODY WASH SHOWER GEL HYDRATING 400ML,33049990,,,Tim;PPJK,Sabun mandi cair wewangian
-E034,33,hard,SKIN BEAUTY ESSENCE FORMULA FX-100 50ML,33049930,33049990,Cairan serum perawatan kulit wajah,Tim;PPJK,Perlu tanya fungsi esens untuk kulit atau bibir
-E035,33,hard,COSMETIC COLOR TINT FLUID 15ML,33041000,33049990,Lip tint cair perias bibir,Tim;PPJK,Perlu tanya perias bibir atau mata atau pipi
-E036,33,hard,HERBAL EXTRACT AROMA PREPARATION 100ML,33072000,33049990,Cairan wewangian deodoran tubuh,Tim;PPJK,Perlu tanya penggunaan wewangian deodoran
-E037,61,easy,MEN KNITTED T-SHIRT 100% COTTON ROUND NECK,61091010,,,Tim;PPJK,Kaos katun rajut pria
-E038,61,easy,WOMEN KNITTED T-SHIRT COTTON SHORT SLEEVE,61091020,,,Tim;PPJK,Kaos katun rajut wanita
-E039,61,easy,MEN KNITTED POLYESTER SPORTS T-SHIRT,61099000,,,Tim;PPJK,Kaos rajut poliester
-E040,61,easy,PULLOVER KNITTED COTTON SWEATER FOR WINTER,61102000,,,Tim;PPJK,Pullover rajut katun
-E041,61,medium,CREWNECK CARDIGAN KNITTED FROM COTTON YARN,61102000,,,Tim;PPJK,Cardigan rajutan katun
-E042,61,medium,COTTON SINGLET TANK TOP KNITTED MENS,61091010,,,Tim;PPJK,Singlet katun rajut pria
-E043,61,medium,GIRLS CASUAL T-SHIRT KNITTED COTTON PRINTED,61091020,,,Tim;PPJK,Kaos katun rajut anak perempuan
-E044,61,medium,SYNTHETIC FIBER KNITTED SWEATER,61102000,61099000,,Tim;PPJK,Sweater rajut serat sintetis
-E045,61,hard,MEN T-SHIRT 100% COTTON PREMIUM QUALITY,61091010,62052000,Konstruksi kain rajutan (knitted),Tim;PPJK,Perlu tanya konstruksi rajut (Bab 61) atau tenun (Bab 62)
-E046,61,hard,LADIES CASUAL TOP SUMMER COLLECTION COTTON,61091020,62063000,Konstruksi kain rajutan (knitted),Tim;PPJK,Perlu tanya rajutan atau tenunan blus
-E047,61,hard,BASIC COTTON SINGLET FOR GYM WEAR,61091010,62034290,Konstruksi rajutan katun pria,Tim;PPJK,Perlu tanya konstruksi rajutan atau tenun
-E048,61,hard,SPORT WEAR T-SHIRT DRY FIT MENS,61099000,61091010,Bahan serat sintetis rajutan,Tim;PPJK,Perlu tanya bahan katun atau serat sintetis
-E049,62,easy,MEN WOVEN TROUSERS 100% COTTON CHINO PANTS,62034290,,,Tim;PPJK,Celana panjang tenun katun pria
-E050,62,easy,WOMEN WOVEN TROUSERS COTTON CASUAL SLACKS,62046200,,,Tim;PPJK,Celana panjang tenun katun wanita
-E051,62,easy,MEN FORMAL DRESS SHIRT 100% COTTON LONG SLEEVE,62052000,,,Tim;PPJK,Kemeja tenun katun pria
-E052,62,easy,WOMEN FORMAL BLOUSE 100% COTTON BUTTON UP,62063000,,,Tim;PPJK,Blus tenun katun wanita
-E053,62,medium,MEN COTTON DENIM JEANS TROUSERS REGULAR FIT,62034290,,,Tim;PPJK,Celana jeans denim tenun katun pria
-E054,62,medium,WOMEN COTTON DENIM TROUSERS SLIM FIT,62046200,,,Tim;PPJK,Celana jeans denim tenun katun wanita
-E055,62,medium,MEN SHORT SLEEVE CASUAL SHIRT WOVEN COTTON,62052000,,,Tim;PPJK,Kemeja lengan pendek tenun katun pria
-E056,62,medium,LADIES SHIRT-BLOUSE WOVEN COTTON POPLIN,62063000,,,Tim;PPJK,Kemeja blus poplin tenun katun wanita
-E057,62,hard,MEN CASUAL PANTS COTTON BLEND KHAKI,62034290,,Bahan kain tenun (woven/non-knitted),Tim;PPJK,Perlu tanya tenun atau rajut
-E058,62,hard,WOMEN OFFICE PANTS NAVY BLUE,62046200,,Bahan kain tenun katun,Tim;PPJK,Perlu tanya tenun atau rajut dan jenis serat
-E059,62,hard,MEN BUSINESS SHIRT PLAIN COLOR,62052000,,Bahan kain tenun katun pria,Tim;PPJK,Perlu tanya komposisi kain tenun katun
-E060,62,hard,FEMALE COLLARED TOP WORKWEAR,62063000,,Bahan kain tenun katun wanita,Tim;PPJK,Perlu tanya konstruksi kain blus wanita
+E001,84,easy,AUTOMATIC ROTARY PLASTIC BAG SEALING MACHINE 220V 50HZ,84223000,84224000,,Label internal (belum diverifikasi),Mesin segel kantong plastik otomatis
+E002,84,easy,BALL VALVE 2 INCH CAST IRON FLANGED CLASS 150,84818014,84818099,,Label internal (belum diverifikasi),Katup bola besi
+E003,84,easy,GATE VALVE DN100 PN16 CAST STEEL BODY,84818015,84818099,,Label internal (belum diverifikasi),Katup gerbang baja
+E004,84,easy,HORIZONTAL WATER CENTRIFUGAL PUMP 3KW,84137091,,,Label internal (belum diverifikasi),Pompa sentrifugal air 3kW
+E005,84,medium,CHECK VALVE WAFER TYPE DUCTILE IRON DN80,84813090,84818014,,Label internal (belum diverifikasi),Katup searah non-return
+E006,84,medium,PRESSURE REDUCING REGULATOR VALVE BRASS 1/2 INCH,84811099,,,Label internal (belum diverifikasi),Katup penurun tekanan
+E007,84,medium,HIGH PRESSURE PNEUMATIC CONTROL ACTUATED VALVE,84812090,84818099,,Label internal (belum diverifikasi),Katup pneumatik transmisi
+E008,84,medium,BRASS BALL VALVE 1 INCH THREADED SCREW BSPT,84818011,,,Label internal (belum diverifikasi),Katup bola kuningan
+E009,84,medium,CONTINUOUS HEAT SHRINK WRAPPING MACHINE FOR CARTONS,84224000,84223000,,Label internal (belum diverifikasi),Mesin pembungkus karton
+E010,84,hard,INDUSTRIAL PROCESS FLOW VALVE MODEL VK-200,84818014,84818099,Katup bola dengan badan cast iron,Label internal (belum diverifikasi),Perlu klarifikasi tipe katup dan bahan bodi
+E011,84,hard,SHUTOFF CONTROL VALVE FLANGE CONNECTION DN50,84818015,84818099,Gate valve dengan material stainless steel,Label internal (belum diverifikasi),Perlu klarifikasi jenis katup dan bahan
+E012,84,hard,LIQUID DOSING VALVE WITH ACTUATOR,84812090,84818099,Katup pneumatik kontrol cairan,Label internal (belum diverifikasi),Perlu klarifikasi mekanisme kerja penggerak
+E013,85,easy,THREE PHASE AC INDUCTION MOTOR 5.5KW 380V 50HZ 4 POLE,85015219,,,Label internal (belum diverifikasi),Motor induksi 3 fase 5.5 kW
+E014,85,easy,THREE PHASE INDUCTION MOTOR 15KW 380V 1450RPM,85015229,,,Label internal (belum diverifikasi),Motor induksi 3 fase 15 kW
+E015,85,easy,PLC MAIN AUTOMATION CONTROL PANEL 380V FOR PACKAGING LINE,85371099,,,Label internal (belum diverifikasi),Panel kontrol PLC
+E016,85,easy,INDUCTIVE PROXIMITY SENSOR SWITCH 24VDC NPN NO M12,85437090,,,Label internal (belum diverifikasi),Sensor proximity induktif
+E017,85,medium,ELECTRIC MOTOR SQUIRREL CAGE 3KW 400V,85015219,,,Label internal (belum diverifikasi),Motor induksi sangkar tupai 3kW
+E018,85,medium,HEAVY DUTY DRIVE MOTOR 30KW 380V TEFC,85015229,,,Label internal (belum diverifikasi),Motor AC industri 30kW
+E019,85,medium,MOTOR CONTROL CENTER MCC PANEL CABINET 415V,85371099,,,Label internal (belum diverifikasi),Kabinet panel MCC kontrol listrik
+E020,85,medium,CAPACITIVE PROXIMITY SENSOR M18 10-30VDC,85437090,,,Label internal (belum diverifikasi),Sensor kapasitif 24V
+E021,85,medium,OPTICAL PHOTOELECTRIC SENSOR THRU-BEAM 24V,85437090,,,Label internal (belum diverifikasi),Sensor fotolistrik
+E022,85,hard,ELECTRIC DRIVE UNIT MODEL EDM-550,85015219,85015229,Motor AC 3 fase daya 5.5 kW,Label internal (belum diverifikasi),Perlu klarifikasi spesifikasi daya dan tipe motor
+E023,85,hard,AUTOMATION DISTRIBUTION BOARD PANEL UNIT,85371099,,Panel kontrol voltase 380V untuk otomasi mesin,Label internal (belum diverifikasi),Perlu klarifikasi tegangan dan fungsi panel
+E024,85,hard,INDUSTRIAL DETECTION PROBE SENSOR MODULE,85437090,,Sensor proximity induktif untuk deteksi logam,Label internal (belum diverifikasi),Perlu klarifikasi jenis pendeteksian sensor
+E025,33,easy,MATTE LIPSTICK RED VELVET 3.8G,33041000,,,Label internal (belum diverifikasi),Lipstik kosmetik bibir
+E026,33,easy,LIQUID WATERPROOF EYELINER BLACK 2.5ML,33042000,,,Label internal (belum diverifikasi),Rias mata eyeliner
+E027,33,easy,FACIAL HYDRATING SERUM HYALURONIC ACID 30ML,33049930,,,Label internal (belum diverifikasi),Serum perawatan kulit wajah
+E028,33,easy,ANTI DANDRUFF HAIR SHAMPOO 250ML,33051000,,,Label internal (belum diverifikasi),Sampo rambut anti ketombe
+E029,33,medium,LIP GLOSS SHINE FINISH WITH VITAMIN E,33041000,,,Label internal (belum diverifikasi),Lip gloss bibir
+E030,33,medium,EYE SHADOW PALETTE 12 COLORS COSMETICS,33042000,,,Label internal (belum diverifikasi),Eye shadow palet mata
+E031,33,medium,NIGHT REPAIR FACE MOISTURIZER CREAM 50G,33049930,,,Label internal (belum diverifikasi),Krim pelembab wajah
+E032,33,medium,ROLL-ON DEODORANT ANTIPERSPIRANT 50ML,33072000,,,Label internal (belum diverifikasi),Deodoran ketiak roll-on
+E033,33,medium,BODY WASH SHOWER GEL HYDRATING 400ML,33049990,,,Label internal (belum diverifikasi),Sabun mandi cair wewangian
+E034,33,hard,SKIN BEAUTY ESSENCE FORMULA FX-100 50ML,33049930,33049990,Cairan serum perawatan kulit wajah,Label internal (belum diverifikasi),Perlu tanya fungsi esens untuk kulit atau bibir
+E035,33,hard,COSMETIC COLOR TINT FLUID 15ML,33041000,33049990,Lip tint cair perias bibir,Label internal (belum diverifikasi),Perlu tanya perias bibir atau mata atau pipi
+E036,33,hard,HERBAL EXTRACT AROMA PREPARATION 100ML,33072000,33049990,Cairan wewangian deodoran tubuh,Label internal (belum diverifikasi),Perlu tanya penggunaan wewangian deodoran
+E037,61,easy,MEN KNITTED T-SHIRT 100% COTTON ROUND NECK,61091010,,,Label internal (belum diverifikasi),Kaos katun rajut pria
+E038,61,easy,WOMEN KNITTED T-SHIRT COTTON SHORT SLEEVE,61091020,,,Label internal (belum diverifikasi),Kaos katun rajut wanita
+E039,61,easy,MEN KNITTED POLYESTER SPORTS T-SHIRT,61099000,,,Label internal (belum diverifikasi),Kaos rajut poliester
+E040,61,easy,PULLOVER KNITTED COTTON SWEATER FOR WINTER,61102000,,,Label internal (belum diverifikasi),Pullover rajut katun
+E041,61,medium,CREWNECK CARDIGAN KNITTED FROM COTTON YARN,61102000,,,Label internal (belum diverifikasi),Cardigan rajutan katun
+E042,61,medium,COTTON SINGLET TANK TOP KNITTED MENS,61091010,,,Label internal (belum diverifikasi),Singlet katun rajut pria
+E043,61,medium,GIRLS CASUAL T-SHIRT KNITTED COTTON PRINTED,61091020,,,Label internal (belum diverifikasi),Kaos katun rajut anak perempuan
+E044,61,medium,SYNTHETIC FIBER KNITTED SWEATER,61102000,61099000,,Label internal (belum diverifikasi),Sweater rajut serat sintetis
+E045,61,hard,MEN T-SHIRT 100% COTTON PREMIUM QUALITY,61091010,62052000,Konstruksi kain rajutan (knitted),Label internal (belum diverifikasi),Perlu tanya konstruksi rajut (Bab 61) atau tenun (Bab 62)
+E046,61,hard,LADIES CASUAL TOP SUMMER COLLECTION COTTON,61091020,62063000,Konstruksi kain rajutan (knitted),Label internal (belum diverifikasi),Perlu tanya rajutan atau tenunan blus
+E047,61,hard,BASIC COTTON SINGLET FOR GYM WEAR,61091010,62034290,Konstruksi rajutan katun pria,Label internal (belum diverifikasi),Perlu tanya konstruksi rajutan atau tenun
+E048,61,hard,SPORT WEAR T-SHIRT DRY FIT MENS,61099000,61091010,Bahan serat sintetis rajutan,Label internal (belum diverifikasi),Perlu tanya bahan katun atau serat sintetis
+E049,62,easy,MEN WOVEN TROUSERS 100% COTTON CHINO PANTS,62034290,,,Label internal (belum diverifikasi),Celana panjang tenun katun pria
+E050,62,easy,WOMEN WOVEN TROUSERS COTTON CASUAL SLACKS,62046200,,,Label internal (belum diverifikasi),Celana panjang tenun katun wanita
+E051,62,easy,MEN FORMAL DRESS SHIRT 100% COTTON LONG SLEEVE,62052000,,,Label internal (belum diverifikasi),Kemeja tenun katun pria
+E052,62,easy,WOMEN FORMAL BLOUSE 100% COTTON BUTTON UP,62063000,,,Label internal (belum diverifikasi),Blus tenun katun wanita
+E053,62,medium,MEN COTTON DENIM JEANS TROUSERS REGULAR FIT,62034290,,,Label internal (belum diverifikasi),Celana jeans denim tenun katun pria
+E054,62,medium,WOMEN COTTON DENIM TROUSERS SLIM FIT,62046200,,,Label internal (belum diverifikasi),Celana jeans denim tenun katun wanita
+E055,62,medium,MEN SHORT SLEEVE CASUAL SHIRT WOVEN COTTON,62052000,,,Label internal (belum diverifikasi),Kemeja lengan pendek tenun katun pria
+E056,62,medium,LADIES SHIRT-BLOUSE WOVEN COTTON POPLIN,62063000,,,Label internal (belum diverifikasi),Kemeja blus poplin tenun katun wanita
+E057,62,hard,MEN CASUAL PANTS COTTON BLEND KHAKI,62034290,,Bahan kain tenun (woven/non-knitted),Label internal (belum diverifikasi),Perlu tanya tenun atau rajut
+E058,62,hard,WOMEN OFFICE PANTS NAVY BLUE,62046200,,Bahan kain tenun katun,Label internal (belum diverifikasi),Perlu tanya tenun atau rajut dan jenis serat
+E059,62,hard,MEN BUSINESS SHIRT PLAIN COLOR,62052000,,Bahan kain tenun katun pria,Label internal (belum diverifikasi),Perlu tanya komposisi kain tenun katun
+E060,62,hard,FEMALE COLLARED TOP WORKWEAR,62063000,,Bahan kain tenun katun wanita,Label internal (belum diverifikasi),Perlu tanya konstruksi kain blus wanita

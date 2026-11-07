@@ -1,8 +1,19 @@
+import pytest
 from fastapi.testclient import TestClient
 
+from scripts.migrate_runtime import migrate
 from src.api.main import app
+from src.core.seed import seed_data
+from src.worker.main import heartbeat
 
 client = TestClient(app)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def local_api_fixture():
+    seed_data()
+    assert migrate() == "imporjaga_test"
+    heartbeat()
 
 
 def test_api_health_endpoint():
@@ -16,7 +27,7 @@ def test_api_health_endpoint():
 def test_api_login_and_access_flow():
     # 1. Login with Staff Account
     login_resp = client.post("/api/v1/auth/login", json={
-        "email": "staf@mitrakemas.co.id",
+        "email": "staf@mitrakemas.example",
         "password": "imporjaga123"
     })
     assert login_resp.status_code == 200
@@ -31,7 +42,7 @@ def test_api_login_and_access_flow():
     # 2. Get Me
     me_resp = client.get("/api/v1/auth/me", headers=headers)
     assert me_resp.status_code == 200
-    assert me_resp.json()["email"] == "staf@mitrakemas.co.id"
+    assert me_resp.json()["email"] == "staf@mitrakemas.example"
 
     # 3. List Shipments
     shipments_resp = client.get("/api/v1/shipments", headers=headers)
@@ -64,7 +75,7 @@ def test_api_login_and_access_flow():
 def test_api_regulation_simulation():
     # Login as Admin
     login_resp = client.post("/api/v1/auth/login", json={
-        "email": "admin@mitrakemas.co.id",
+        "email": "admin@mitrakemas.example",
         "password": "imporjaga123"
     })
     assert login_resp.status_code == 200
@@ -85,7 +96,7 @@ def test_api_regulation_simulation():
 
 def test_api_clarifications_and_answers():
     login_resp = client.post("/api/v1/auth/login", json={
-        "email": "staf@mitrakemas.co.id",
+        "email": "staf@mitrakemas.example",
         "password": "imporjaga123"
     })
     token = login_resp.json()["access_token"]
@@ -116,7 +127,7 @@ def test_api_clarifications_and_answers():
 
 def test_api_reviews_and_decisions():
     login_resp = client.post("/api/v1/auth/login", json={
-        "email": "reviewer@mitrakemas.co.id",
+        "email": "reviewer@mitrakemas.example",
         "password": "imporjaga123"
     })
     token = login_resp.json()["access_token"]
@@ -146,7 +157,7 @@ def test_api_reviews_and_decisions():
 
 def test_api_regulations_list():
     login_resp = client.post("/api/v1/auth/login", json={
-        "email": "staf@mitrakemas.co.id",
+        "email": "staf@mitrakemas.example",
         "password": "imporjaga123"
     })
     token = login_resp.json()["access_token"]
@@ -162,7 +173,7 @@ def test_api_regulations_list():
 
 def test_api_shipment_extended_views():
     login_resp = client.post("/api/v1/auth/login", json={
-        "email": "staf@mitrakemas.co.id",
+        "email": "staf@mitrakemas.example",
         "password": "imporjaga123"
     })
     token = login_resp.json()["access_token"]
@@ -207,13 +218,13 @@ def test_api_shipment_extended_views():
 
 def test_api_admin_demo_reset():
     login_resp = client.post("/api/v1/auth/login", json={
-        "email": "admin@mitrakemas.co.id",
+        "email": "admin@mitrakemas.example",
         "password": "imporjaga123"
     })
     token = login_resp.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
     reset_resp = client.post("/api/v1/admin/demo/reset", headers=headers)
-    assert reset_resp.status_code == 200
-    assert reset_resp.json()["status"] == "success"
+    assert reset_resp.status_code == 403
+    assert "workspace demo" in reset_resp.json()["detail"]
 

@@ -15,7 +15,7 @@ def sanitize_extraction_metadata(raw_text: str, allowed_recipients: list[str]) -
     Ensures that adversarial instructions (e.g., 'set readiness=ready', 'send email to attacker@evil.com')
     cannot override business logic, recipients allowlist, or readiness rules.
     """
-    default_recipient = allowed_recipients[0] if allowed_recipients else "tim-impor@mitrakemas.co.id"
+    default_recipient = allowed_recipients[0] if allowed_recipients else "tim-impor@mitrakemas.example"
 
     # Reject any extracted email address that is not in the explicit allowlist
     found_emails = re.findall(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", raw_text)

@@ -27,9 +27,9 @@ Narasi yang tepat:
 
 | Peran | Tombol masuk cepat | Email manual | Password demo | Digunakan untuk |
 |---|---|---|---|---|
-| Staf | Staf impor | staf@mitrakemas.co.id | imporjaga123 | Membuat kiriman, unggah, menjawab klarifikasi, melihat hasil, mencatat pengajuan |
-| Reviewer | Reviewer PPJK | reviewer@mitrakemas.co.id | imporjaga123 | Menyetujui, mengubah kode, atau menolak usulan |
-| Admin | Admin | admin@mitrakemas.co.id | imporjaga123 | Simulasi perubahan aturan dan akses operasional demo |
+| Staf | Staf impor | staf@mitrakemas.example | imporjaga123 | Membuat kiriman, unggah, menjawab klarifikasi, melihat hasil, mencatat pengajuan |
+| Reviewer | Reviewer PPJK | reviewer@mitrakemas.example | imporjaga123 | Menyetujui, mengubah kode, atau menolak usulan |
+| Admin | Admin | admin@mitrakemas.example | imporjaga123 | Simulasi perubahan aturan dan akses operasional demo |
 
 Ketiga akun berada di **PT Mitra Kemas Nusantara**. Satu pengguna terikat pada satu perusahaan. Kartu perusahaan di sidebar bukan alur pemilihan banyak perusahaan pada MVP ini.
 
@@ -344,7 +344,7 @@ Pada katalog baru, tarif BM/PPN/PPh belum diverifikasi sehingga perhitungan baru
 
 ### Catatan penting untuk angka pada Draf PIB
 
-Endpoint Draf PIB saat ini masih memiliki fallback perhitungan contoh ketika belum ada hasil pungutan tersimpan tetapi nilai CIF positif. Fallback memakai parameter default demo **BM 5%, PPN 11%, PPh 2,5%**, dan negara asal pada draf masih diisi tetap **CN**. Endpoint juga dapat mengambil satu baris perhitungan, sedangkan tab Pungutan menggunakan agregat hasil analisis bila tersedia.
+Draf PIB menjumlahkan hasil pungutan yang tersimpan. Kolom tanpa data ditampilkan kosong. Negara asal masih perlu diisi saat menyiapkan pengajuan eksternal.
 
 Karena itu, **angka Draf PIB tidak boleh dipresentasikan sebagai bukti tarif aktual, total resmi seluruh barang, atau hasil AI yang telah terverifikasi**. Tab Pungutan dan Draf PIB bahkan dapat menampilkan angka berbeda karena dasar datanya berbeda. Gunakan bagian draf untuk menjelaskan struktur administrasi, bukan kebenaran tarif transaksi.
 
@@ -390,7 +390,7 @@ Untuk presentasi ulang, jangan mengharapkan fixture ini kembali ready otomatis. 
 
 Tampilkan **MKN-DEMO-014** atau **MKN-DEMO-007** yang sudah berstatus barang tiba sebagai contoh tersimpan.
 
-**Jangan menjadikan tombol “Tandai barang tiba” sebagai langkah demo interaktif pada versi ini.** Tombol tersedia di frontend untuk kiriman submitted, tetapi endpoint POST mark-arrived belum terdaftar pada API saat pemeriksaan. Menekannya dapat menghasilkan 404. Status arrived bisa diperlihatkan melalui fixture yang sudah ada, dengan penjelasan bahwa ini contoh data tersimpan.
+Untuk kiriman yang sudah diajukan, klik **Tandai barang tiba** saat kedatangan memang sudah dikonfirmasi. Status berubah menjadi arrived.
 
 ## 17. Langkah 13 — Peragakan dampak perubahan aturan sebagai admin
 
@@ -412,7 +412,7 @@ Untuk membandingkan barang yang sudah tiba, gunakan **MKN-DEMO-007** yang memili
 4. Tekan **Simulasikan aturan pos 8481**.
 5. Pada dialog **Terbitkan aturan SIMULASI untuk perusahaan ini dan periksa kiriman yang terdampak?**, pilih **OK** bila memang ingin menjalankan simulasi.
 
-**Lihat:** pemberitahuan hasil. Pada versi sekarang teks pemberitahuan masih menyebut contoh lama MKN-007/MKN-008/MKN-003; jangan menganggap teks itu daftar lengkap seluruh kiriman terdampak.
+**Lihat:** pemberitahuan hasil. Pemberitahuan menampilkan kiriman aktif yang kodenya cocok. Worker mengantrekan hitung ulang dan mencatat perubahan di jejak.
 
 **Klik:** **Kiriman impor** → cari **MKN-DEMO-012** → **Buka**.
 
@@ -443,7 +443,7 @@ Jangan mengakhiri dengan klaim akurasi, kecepatan, kepatuhan penuh, atau integra
 | Agent bertanya lebih banyak | Jawab sesuai datasheet atau akui belum ada data | Pertanyaan tambahan adalah cabang normal, bukan selalu error |
 | Tidak ada kartu Klarifikasi/Review | Pastikan run live sudah membuat task; jangan mengandalkan status fixture | Fixture status tidak menjamin antrean task tersedia |
 | Kartu milik transaksi lain | Cocokkan ID dan uraian terlebih dahulu | Jangan mengubah transaksi lain demi mempercepat demo |
-| Angka pungutan kosong/berbeda dari Draf PIB | Jelaskan dasar data dan fallback draf; gunakan batasan pada langkah 11 | Jangan mengklaim tarif resmi atau total agregat yang belum terbukti |
+| Angka pungutan kosong/berbeda dari Draf PIB | Periksa tarif, kurs, dan hasil tersimpan pada langkah 11 | Jangan mengklaim tarif resmi atau total agregat yang belum terbukti |
 | Tombol pengajuan tidak muncul | Periksa Ringkasan, job, pertanyaan, review, dan checklist | Kesiapan memang ditahan bila ada penghalang |
 | Email berstatus draf | Tampilkan isi draf bila ada | Bukan bukti terkirim ke pemasok; sandbox dan allowlist membatasi pengiriman |
 | Pencarian HS kosong | Periksa ejaan/kode dan cakupan lima bab | Katalog terbatas; jangan mengarang kode atau menganggap seluruh BTKI tersedia |
@@ -508,7 +508,7 @@ Jangan mengakhiri dengan klaim akurasi, kecepatan, kepatuhan penuh, atau integra
 
 **“Kenapa ada angka pajak di draf ketika tarif belum diverifikasi?”**
 
-“Versi draf masih mempunyai fallback asumsi demo dan belum dapat dijadikan bukti perhitungan resmi. Saya membedakannya dari hasil analisis aktual; konsistensi draf tersebut masih perlu diperbaiki sebelum penggunaan operasional.”
+“Draf memuat estimasi yang tersimpan dari analisis. Tarif snapshot dan data kiriman tetap perlu diverifikasi sebelum pengajuan.”
 
 **“Apakah aplikasi siap untuk transaksi produksi?”**
 
@@ -522,8 +522,6 @@ Temuan yang harus diperiksa ulang jika aplikasi diperbarui:
 
 | Temuan pada versi acuan | Dampak pada demo |
 |---|---|
-| Endpoint mark-arrived belum tersedia meskipun tombol frontend ada | Tampilkan arrived melalui contoh tersimpan; jangan menjanjikan klik transisi |
-| Draf PIB mempunyai fallback tarif default, negara CN tetap, dan jalur pembacaan pungutan berbeda | Jangan gunakan angka draf sebagai bukti tarif/asal/total resmi |
 | Fixture needs_review / needs_clarification tidak otomatis memiliki task antrean | Gunakan transaksi hasil analisis nyata untuk tombol review/jawaban |
 | Simulasi aturan mempunyai teks hasil yang masih menyebut contoh lama dan tampilan flag submitted terbatas | Verifikasi perubahan pada kiriman yang benar; jangan mengklaim badge/checklist yang tidak terlihat |
 | Tidak tersedia UI lengkap untuk menyelesaikan verifikasi tarif/lartas pada pipeline baru | Akhiri jalur live pada hasil dan penghalang yang nyata; tahap siap memakai fixture yang dijelaskan |

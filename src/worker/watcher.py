@@ -14,7 +14,7 @@ def evaluate_shipment_watcher_eligibility(shipment: dict[str, Any], target_headi
     shipment_heading = shipment.get("hs_heading", "").replace(".", "").strip()
     clean_target = target_heading.replace(".", "").strip()
 
-    return bool(clean_target in shipment_heading or shipment_heading.startswith(clean_target))
+    return bool(clean_target and shipment_heading.startswith(clean_target))
 
 
 def find_affected_shipments_by_hs_prefix(
@@ -28,6 +28,8 @@ def find_affected_shipments_by_hs_prefix(
     Supports either SQLAlchemy session (db) or raw database cursor (cur).
     """
     clean_prefix = hs_prefix.replace(".", "").strip()
+    if not clean_prefix.isascii() or not clean_prefix.isdigit():
+        return []
     results = []
 
     if db is not None:
@@ -63,7 +65,7 @@ def find_affected_shipments_by_hs_prefix(
         cur.execute("""
             SELECT DISTINCT s.id, s.shipment_number, s.status, s.readiness_status
             FROM shipments s
-            JOIN shipment_items i ON i.shipment_id = s.id
+            JOIN shipment_items i ON i.shipment_id = s.id AND i.company_id = s.company_id
             WHERE s.company_id = %s
               AND s.status != 'arrived'
               AND (

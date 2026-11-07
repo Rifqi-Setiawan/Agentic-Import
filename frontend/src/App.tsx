@@ -21,9 +21,9 @@ import { WorkQueue, Reference } from "./components/WorkQueue";
 import { Dashboard } from "./components/Dashboard";
 
 const DEMO = [
-  ["Staf impor", "staf@mitrakemas.co.id"],
-  ["Reviewer PPJK", "reviewer@mitrakemas.co.id"],
-  ["Admin", "admin@mitrakemas.co.id"],
+  ["Staf impor", "staf@mitrakemas.example"],
+  ["Reviewer PPJK", "reviewer@mitrakemas.example"],
+  ["Admin", "admin@mitrakemas.example"],
 ];
 export default function App() {
   const [user, setUser] = useState<Row>();
@@ -40,10 +40,13 @@ export default function App() {
   const [form, setForm] = useState({
     shipment_number: "",
     supplier_name: "",
-    supplier_email: "tim-impor@mitrakemas.co.id",
+    supplier_email: "tim-impor@mitrakemas.example",
     currency: "USD",
     cif_total_idr: "",
     exchange_rate: "",
+    incoterm: "",
+    freight_value: "",
+    insurance_value: "",
   });
   const notify = (message: string) => setNotice(message);
   async function login(address: string, secret: string) {
@@ -93,6 +96,9 @@ export default function App() {
         ...form,
         cif_total_idr: form.cif_total_idr || "0",
         exchange_rate: form.exchange_rate || null,
+        incoterm: form.incoterm || null,
+        freight_value: form.freight_value || null,
+        insurance_value: form.insurance_value || null,
       });
       const data = result.data || result;
       setCreating(false);
@@ -581,7 +587,7 @@ export default function App() {
                 ["cif_total_idr", "CIF rupiah jika sudah diketahui (opsional)"],
                 [
                   "exchange_rate",
-                  "Kurs rupiah per unit valuta — diisi pengguna untuk demo, bukan kurs resmi otomatis",
+                  "Kurs rupiah per unit valuta (opsional jika kurs mingguan tersedia)",
                 ],
               ].map(([key, name]) => (
                 <Field key={key} label={name}>
@@ -595,6 +601,7 @@ export default function App() {
                           : "text"
                     }
                     min={key === "cif_total_idr" ? 0 : undefined}
+                    step={["cif_total_idr", "exchange_rate"].includes(key) ? "any" : undefined}
                     value={(form as Row)[key]}
                     onChange={(e) =>
                       setForm({ ...form, [key]: e.target.value })
@@ -602,6 +609,25 @@ export default function App() {
                   />
                 </Field>
               ))}
+              <Field label="Incoterm invoice">
+                <select value={form.incoterm} onChange={(e) => setForm({ ...form, incoterm: e.target.value })}>
+                  <option value="">Belum ditentukan</option>
+                  <option value="CIF">CIF</option>
+                  <option value="FOB">FOB</option>
+                </select>
+              </Field>
+              {form.incoterm === "FOB" && (
+                <>
+                  <Field label="Ongkos angkut dalam mata uang invoice">
+                    <input type="number" min="0" step="any" value={form.freight_value}
+                      onChange={(e) => setForm({ ...form, freight_value: e.target.value })} />
+                  </Field>
+                  <Field label="Asuransi dalam mata uang invoice (opsional)">
+                    <input type="number" min="0" step="any" value={form.insurance_value}
+                      onChange={(e) => setForm({ ...form, insurance_value: e.target.value })} />
+                  </Field>
+                </>
+              )}
               <div className="actions">
                 <button className="primary" disabled={busy}>
                   {busy ? "Menyimpan…" : "Simpan kiriman"}

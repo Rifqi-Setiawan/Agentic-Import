@@ -54,24 +54,38 @@ def deliver(connection, job):
     result = process_outbox_message(dict(message))
     connection.execute("UPDATE messages SET delivery_status=%s,sent_at=CASE WHEN %s='sent' THEN NOW() ELSE sent_at END WHERE id=%s", (result.delivery_status.value,result.delivery_status.value,message["id"]))
     if result.delivery_status.value == "sent" and not payload.get("reminder"):
-        key = "reminder:" + message["dedupe_key"]
+        key = "followup:" + message["dedupe_key"]
         when = datetime.now(UTC) + timedelta(minutes=settings.FOLLOWUP_DELAY_MINUTES)
         connection.execute("""INSERT INTO jobs(shipment_id,company_id,event_type,dedupe_key,payload,status,run_after,created_at)
-            VALUES(%s,%s,'followup',%s,%s,'queued',%s,NOW()) ON CONFLICT(dedupe_key) DO NOTHING""", (job["shipment_id"],job["company_id"],key,Jsonb({"message_id":message["id"]}),when))
+            VALUES(%s,%s,'followup',%s,%s,'queued',%s,NOW()) ON CONFLICT(dedupe_key) DO NOTHING""",
+            (job["shipment_id"],job["company_id"],key,Jsonb({"message_id":message["id"],
+                "document_requirements": payload.get("document_requirements") or []}),when))
 
 
 def followup(connection, job):
+    payload = job["payload"] or {}
     pending = connection.execute("SELECT COUNT(*) AS n FROM clarifications WHERE shipment_id=%s AND company_id=%s AND status='open'", (job["shipment_id"],job["company_id"])).fetchone()["n"]
+    if not pending and payload.get("document_requirements"):
+        pending = connection.execute("""SELECT COUNT(*) AS n FROM checklist_items
+            WHERE shipment_id=%s AND company_id=%s AND status='missing' AND requirement_code=ANY(%s)""",
+            (job["shipment_id"], job["company_id"], payload["document_requirements"])).fetchone()["n"]
     if not pending:
         return
-    message = connection.execute("SELECT * FROM messages WHERE id=%s AND company_id=%s", ((job["payload"] or {}).get("message_id"),job["company_id"])).fetchone()
+    message = connection.execute(
+        "SELECT * FROM messages WHERE id=%s AND company_id=%s AND shipment_id=%s",
+        (payload.get("message_id"), job["company_id"], job["shipment_id"]),
+    ).fetchone()
     if message:
         key = "reminder:" + message["dedupe_key"]
         reminder = connection.execute("""INSERT INTO messages(shipment_id,company_id,dedupe_key,recipient,subject,body,delivery_status,created_at)
             VALUES(%s,%s,%s,%s,%s,%s,'pending',NOW()) ON CONFLICT(dedupe_key) DO NOTHING RETURNING id""", (job["shipment_id"],job["company_id"],key,message["recipient"],"Pengingat — "+message["subject"],message["body"])).fetchone()
+        if not reminder:
+            reminder = connection.execute("""SELECT id FROM messages
+                WHERE dedupe_key=%s AND company_id=%s AND shipment_id=%s AND delivery_status='pending'""",
+                (key, job["company_id"], job["shipment_id"])).fetchone()
         if reminder:
             connection.execute("""INSERT INTO jobs(shipment_id,company_id,event_type,dedupe_key,payload,status,run_after,created_at)
-                VALUES(%s,%s,'send_email',%s,%s,'queued',NOW(),NOW()) ON CONFLICT(dedupe_key) DO NOTHING""", (job["shipment_id"],job["company_id"],key,Jsonb({"message_id":reminder["id"],"reminder":True})))
+                VALUES(%s,%s,'send_email',%s,%s,'queued',NOW(),NOW()) ON CONFLICT(dedupe_key) DO NOTHING""", (job["shipment_id"],job["company_id"],"mail-"+key,Jsonb({"message_id":reminder["id"],"reminder":True})))
 
 
 def run_once():
@@ -104,6 +118,7 @@ def run_once():
                     VALUES(%s,%s,%s,%s,%s,'running',NOW(),0,NULL) RETURNING id""", (job["shipment_id"],job["company_id"],mode,shipment["input_version"],Jsonb(payload.get("target_item_ids")))).fetchone()["id"]
                 connection.commit()
                 state = {"shipment_id":str(job["shipment_id"]),"company_id":str(job["company_id"]),"run_id":str(run_id),"mode":mode,"event_type":kind,"input_version":shipment["input_version"],"target_item_ids":payload.get("target_item_ids"),"items":[],"documents":[],"steps_log":[]}
+                state["regulation_id"] = payload.get("regulation_id")
                 result = build_analysis_graph().invoke(state)
                 connection.execute("UPDATE agent_runs SET status='succeeded',outcome=%s,ended_at=NOW() WHERE id=%s", (result["outcome"],run_id))
             connection.execute("UPDATE jobs SET status='completed' WHERE id=%s", (job["id"],))

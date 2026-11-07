@@ -1,6 +1,8 @@
 import argparse
+import csv
 import json
 import sys
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
@@ -10,6 +12,7 @@ if str(ROOT) not in sys.path:
 
 import psycopg
 from src.core.config import settings
+from src.core.import_rates import demo_rates
 
 CATALOG_FILE = ROOT / "data" / "reference" / "hs_codes_btki2022.json"
 FIXTURES_FILE = ROOT / "data" / "demo" / "shipments.json"
@@ -44,6 +47,7 @@ def parse_args():
         default=None,
         help="Explicit database URL override (optional)",
     )
+    parser.add_argument("--exchange-rates", type=Path, help="CSV kurs KMK yang sudah diperiksa")
     return parser.parse_args()
 
 
@@ -115,6 +119,16 @@ def import_catalog(conn):
               AND source = 'INSW Official Regulatory Database';
         """)
         archived_lartas = cur.rowcount
+        cur.execute("""
+            UPDATE checklist_items c
+            SET status='not_needed', resolution_reason='Aturan placeholder diarsipkan'
+            WHERE c.status IN ('missing','pending','required')
+              AND c.resolution_reason = 'INSW Official Regulatory Database'
+              AND EXISTS (SELECT 1 FROM lartas_rules r
+                  WHERE r.company_id IS NULL AND NOT r.is_active
+                    AND r.source='Legacy Seed (Archived Placeholder)'
+                    AND r.requirement_key=c.requirement_code);
+        """)
         print(f"Archived {archived_lartas} legacy global placeholder lartas rules (company_id IS NULL).")
 
         # 2. Sync official BTKI 2022 catalog
@@ -158,11 +172,15 @@ def import_catalog(conn):
                 """, (code, desc_id, desc_en, source))
                 inserted += 1
 
+        for code, rate in demo_rates().items():
+            cur.execute("UPDATE hs_codes SET bm_rate=%s WHERE replace(hs_code,'.','')=%s",
+                        (Decimal(rate["bm_rate"]), code))
+
     print(f"Catalog sync complete: {inserted} inserted, {updated} updated (total {len(codes)} official codes).")
     return len(codes)
 
 
-def import_fixtures(conn, company_id: int):
+def import_fixtures(conn, company_id: int, *, interactive: bool = False):
     """
     Additive fixture import:
     - Scoped strictly to company_id.
@@ -260,7 +278,9 @@ def import_fixtures(conn, company_id: int):
 
                 # Ensure ready fixtures have items approved and accepted
                 is_appr = status in ("ready", "submitted", "arrived")
-                item_status = "approved" if is_appr else ("review" if status == "needs_review" else "draft")
+                item_status = {"needs_review": "review", "needs_clarification": "needs_clarification"}.get(status, "draft")
+                if is_appr:
+                    item_status = "approved"
                 accepted_hs = hs if is_appr else None
                 conf = Decimal("0.95") if is_appr else Decimal("0.85")
                 risk = "low" if is_appr else "medium"
@@ -277,12 +297,24 @@ def import_fixtures(conn, company_id: int):
                         %s, %s, %s, %s,
                         %s, %s, %s, %s, 1,
                         NOW(), NOW()
-                    );
+                    ) RETURNING id;
                 """, (
                     shipment_id, company_id, line_no, desc, qty, uom_val,
                     price, line_total, hs, accepted_hs,
                     conf, risk, item_status, is_appr,
                 ))
+                item_id = cur.fetchone()[0]
+                if interactive and item_status == "review":
+                    cur.execute("""INSERT INTO review_tasks
+                        (shipment_id,company_id,item_id,review_type,status,notes,created_at)
+                        VALUES (%s,%s,%s,'classification','open','Skenario demo untuk pemeriksaan usulan HS.',NOW())""",
+                        (shipment_id, company_id, item_id))
+                elif interactive and item_status == "needs_clarification":
+                    cur.execute("""INSERT INTO clarifications
+                        (shipment_id,company_id,item_id,question,attribute,reason,status,created_at)
+                        VALUES (%s,%s,%s,'Apa bahan dan fungsi utama barang ini?','spesifikasi',
+                            'Pertanyaan contoh untuk alur klarifikasi demo.','open',NOW())""",
+                        (shipment_id, company_id, item_id))
                 created_items += 1
 
             # Sync documents for this shipment
@@ -332,12 +364,28 @@ def import_fixtures(conn, company_id: int):
     return len(shipments), created_items
 
 
+def import_exchange_rates(conn, filename: Path):
+    with filename.open(encoding="utf-8", newline="") as stream, conn.cursor() as cur:
+        for row in csv.DictReader(stream):
+            currency = row["currency"].strip().upper()
+            source = row["source"].strip()
+            if len(currency) != 3 or not currency.isascii() or not currency.isalpha() or not source.startswith("https://"):
+                raise ValueError("Kurs membutuhkan kode mata uang tiga huruf dan tautan sumber HTTPS.")
+            cur.execute("""INSERT INTO exchange_rates(currency,valid_from,valid_until,rate,source)
+                VALUES (%s,%s,%s,%s,%s) ON CONFLICT(currency,valid_from) DO UPDATE
+                SET valid_until=EXCLUDED.valid_until,rate=EXCLUDED.rate,source=EXCLUDED.source""",
+                (currency, date.fromisoformat(row["valid_from"]), date.fromisoformat(row["valid_until"]),
+                 Decimal(row["rate"]), source))
+
+
 def main():
     args = parse_args()
     conn, db_name = get_connection(args.db_url, args.live, args.apply)
 
     try:
         import_catalog(conn)
+        if args.exchange_rates:
+            import_exchange_rates(conn, args.exchange_rates)
         import_fixtures(conn, args.company_id)
         conn.commit()
         print("Import completed successfully and committed.")

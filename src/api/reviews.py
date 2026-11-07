@@ -103,7 +103,7 @@ def submit_review_decision(
 
         cur.execute("""
             UPDATE shipment_items
-            SET status = 'rejected', updated_at = NOW()
+            SET status = 'rejected', is_approved=false, approval_origin=NULL, updated_at = NOW()
             WHERE id = %s;
         """, (item_id,))
 
@@ -150,7 +150,8 @@ def submit_review_decision(
     # Update item status
     cur.execute("""
         UPDATE shipment_items
-        SET status = 'approved', is_approved = true, hs_code_accepted = %s, updated_at = NOW()
+        SET status = 'approved', is_approved = true, hs_code_accepted = %s,
+            approval_origin='human_review', updated_at = NOW()
         WHERE id = %s;
     """, (final_hs, item_id))
 

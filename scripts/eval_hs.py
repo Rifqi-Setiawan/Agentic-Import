@@ -4,8 +4,11 @@ HS Code Evaluation Runner for ImporJaga (MVP v1.1)
 Reproducibly evaluates top-1 HS6, top-1 HS8, and top-3 HS8 accuracy.
 Remediates Audit Finding F02.
 """
-import sys
+import argparse
+import csv
+import hashlib
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -56,15 +59,88 @@ def calculate_metrics(predictions: list[dict]) -> dict:
 
 
 def main():
-    report_file = Path("reports/eval_report_agent.json")
-    if not report_file.exists():
-        print(f"Error: {report_file} does not exist", file=sys.stderr)
-        sys.exit(1)
+    from src.core.catalog import CATALOG_PATH, get_official_catalog
+    from src.core.config import settings
+    from src.services.analysis import PROMPT_VERSION, classify_one
+    from src.services.hs_search import rank_hs_codes
 
-    data = json.loads(report_file.read_text(encoding="utf-8"))
-    samples = data.get("samples", [])
+    parser = argparse.ArgumentParser(description="Evaluate the actual Artha catalogue and classifier.")
+    parser.add_argument("--mode", choices=("retrieval_only", "agent"), required=True)
+    parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--dataset", default=Path("data/eval/eval_hs.csv"), type=Path)
+    args = parser.parse_args()
+    if args.mode == "agent" and not settings.LLM_MODEL:
+        parser.error("Set LLM_MODEL to an authorized evaluation model.")
+
+    catalogue = get_official_catalog()
+    rows = [{"hs_code": code, "description_id": item["description_id"], "description_en": item["description_en"],
+             "source": item["source_url"], "bm_rate": None, "lartas_coverage": "unknown"}
+            for code, item in sorted(catalogue.items())]
+
+    class EvaluationRepository:
+        scope = (0, 0)
+        company_id = run_id = 0
+
+        def __init__(self):
+            self.usage = 0
+
+        def rows(self, sql, params=()):
+            return rows if "FROM hs_codes" in sql else []
+
+        def one(self, sql, params=()):
+            return {"total_tokens": self.usage, "n": 1}
+
+        def record_usage(self, response):
+            self.usage += response.get("total_tokens") or 0
+
+        def trace(self, *args):
+            pass
+
+        def questions(self, item_id):
+            return []
+
+    samples, excluded = [], []
+    with args.dataset.open(encoding="utf-8", newline="") as stream:
+        for row in csv.DictReader(stream):
+            expected = row["expected_hs8"].replace(".", "").strip()
+            if expected not in catalogue:
+                excluded.append({"id": row["id"], "expected_hs8": expected, "reason": "label absent from catalogue"})
+                continue
+            ranked = rank_hs_codes(rows, row["description"], limit=10)
+            candidates = [entry["hs_code"] for entry in ranked]
+            repo = EvaluationRepository()
+            if args.mode == "agent":
+                decision = classify_one(repo, {"id": 0, "line_no": 1, "description": row["description"]}, [], {})
+                predicted = decision.get("hs_code", "")
+                top = [predicted, *(a["hs_code"] for a in decision.get("alternatives", []))] if predicted else []
+                action = decision["action"]
+            else:
+                predicted = candidates[0] if candidates else ""
+                top = candidates
+                action = "retrieval"
+            samples.append({"id": row["id"], "difficulty": row["difficulty"], "expected_hs8": expected,
+                            "predicted_hs8": predicted, "top_candidates": top, "retrieval_candidates": candidates,
+                            "action": action, "tokens": repo.usage if args.mode == "agent" else None})
+
     metrics = calculate_metrics(samples)
-    print("Evaluation Results:", json.dumps(metrics, indent=2))
+    metrics["retrieval_recall_at_10"] = round(100 * sum(
+        sample["expected_hs8"] in sample["retrieval_candidates"] for sample in samples
+    ) / len(samples), 2) if samples else None
+    difficult = [sample for sample in samples if sample["difficulty"] == "hard"]
+    metrics["hard_clarification_percentage"] = round(
+        100 * sum(sample["action"] == "question" for sample in difficult) / len(difficult), 2
+    ) if difficult and args.mode == "agent" else None
+    report = {
+        "mode": args.mode, "created_at": datetime.now(UTC).isoformat(), "prompt_version": PROMPT_VERSION,
+        "model": settings.LLM_MODEL if args.mode == "agent" else None,
+        "catalogue_sha256": hashlib.sha256(CATALOG_PATH.read_bytes()).hexdigest(),
+        "dataset_sha256": hashlib.sha256(args.dataset.read_bytes()).hexdigest(),
+        "label_status": "internal unverified labels; not an independent accuracy benchmark",
+        "metrics": metrics, "excluded": excluded, "samples": samples,
+    }
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps(metrics, indent=2))
 
 
 if __name__ == "__main__":

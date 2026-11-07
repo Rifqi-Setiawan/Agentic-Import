@@ -1,5 +1,7 @@
-
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -14,7 +16,10 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
 
-    STORAGE_VAULT_PATH: str = "/srv/hermes-control/services/agentic-import/data/vault"
+    STORAGE_VAULT_PATH: str = str(PROJECT_ROOT / "data/vault")
+    DEMO_DATA_PATH: str = str(PROJECT_ROOT / "data/demo")
+    FRONTEND_DIST_PATH: str = str(PROJECT_ROOT / "frontend/dist")
+    DEMO_COMPANY_ID: int | None = None
     MAX_UPLOAD_SIZE_MB: int = 10
 
     CORS_ALLOWED_ORIGINS: list[str] = [
@@ -28,19 +33,23 @@ class Settings(BaseSettings):
     LLM_DATA_POLICY: str = "redacted_dev_router"
     LLM_GATEWAY_URL: str = "http://127.0.0.1:20128/v1"
     LLM_GATEWAY_KEY: str = ""
-    LLM_MODEL: str = "ag/gemini-3.8-flash-high"
+    LLM_MODEL: str = ""
+    LLM_MODEL_FALLBACK: str = ""
     LLM_TEMPERATURE: float = 0.0
 
     SMTP_HOST: str = "127.0.0.1"
     SMTP_PORT: int = 1025
+    SMTP_STARTTLS: bool = False
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "demo@mitrakemas.example"
     AGENT_EMAIL_ALLOWED_RECIPIENTS: list[str] = [
-        "tim-impor@mitrakemas.co.id",
-        "rifqi@rifqisetiawan.my.id",
+        "tim-impor@mitrakemas.example",
     ]
     FOLLOWUP_DELAY_MINUTES: int = 3
 
     model_config = SettingsConfigDict(
-        env_file="/srv/hermes-control/services/agentic-import/.env",
+        env_file=PROJECT_ROOT / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )

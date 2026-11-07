@@ -21,7 +21,7 @@ def test_detail_includes_missing_requirements_reviews_and_active_analysis():
                 self.rows = [(1, 1, "QA", "QA", "Fictional", "qa@example.invalid", "IDR", 100,
                     "needs_documents", "incomplete", 1, None, None, now)]
             elif "from shipment_items i" in q:
-                self.rows = [(1, 1, "Sensor", 1, "PCS", 100, 100, "approved", "85437090", None, True, "85365099")]
+                self.rows = [(1, 1, "Sensor", 1, "PCS", 100, 100, "approved", "85437090", None, True, "85365099", None)]
             elif "from documents d" in q:
                 self.rows = [(1, "INVOICE", "qa.pdf", 100, "provided", now)]
             elif "from checklist_items" in q:

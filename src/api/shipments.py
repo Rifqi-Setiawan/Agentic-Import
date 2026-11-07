@@ -2,6 +2,7 @@ import json
 import os
 import uuid
 from decimal import Decimal
+from typing import Literal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
@@ -23,13 +24,17 @@ class CreateShipmentRequest(BaseModel):
     invoice_number: str | None = None
     cif_total_idr: Decimal = Field(default=Decimal("0"), ge=0)
     exchange_rate: Decimal | None = Field(default=None, gt=0)
+    incoterm: Literal["CIF", "FOB"] | None = None
+    freight_value: Decimal | None = Field(default=None, ge=0)
+    insurance_value: Decimal | None = Field(default=None, ge=0)
 
 
 @router.get("")
 def list_shipments(user=Depends(get_current_user), cur=Depends(get_db_cursor)):
     cur.execute("""
         SELECT s.id, s.shipment_number, s.invoice_number, s.supplier_name, s.supplier_email,
-               s.currency, s.cif_total_idr, s.status, s.readiness_status,
+               s.currency, (SELECT SUM(i.total_price_cif) FROM shipment_items i
+                            WHERE i.shipment_id=s.id AND i.company_id=s.company_id), s.status, s.readiness_status,
                s.input_version, s.submitted_at, s.arrived_at, s.created_at,
                (SELECT COUNT(*) FROM shipment_items WHERE shipment_id = s.id) as item_count
         FROM shipments s
@@ -70,13 +75,15 @@ def create_shipment(req: CreateShipmentRequest, user=Depends(get_current_user), 
 
     cur.execute("""
         INSERT INTO shipments (company_id, shipment_number, invoice_number, supplier_name, supplier_email,
-                               currency, exchange_rate, cif_total_idr, total_duty_idr, status, readiness_status, input_version,
+                               currency, exchange_rate, cif_total_idr, incoterm, freight_value, insurance_value,
+                               total_duty_idr, status, readiness_status, input_version,
                                created_at, updated_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 0.0, 'draft', 'incomplete', 1, NOW(), NOW())
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0.0, 'draft', 'incomplete', 1, NOW(), NOW())
         RETURNING id, shipment_number, status;
     """, (
         int(user["company_id"]), ship_num, req.invoice_number,
-        req.supplier_name, supplier_email_clean, req.currency, req.exchange_rate, req.cif_total_idr
+        req.supplier_name, supplier_email_clean, req.currency.upper(), req.exchange_rate, req.cif_total_idr,
+        req.incoterm, req.freight_value, req.insurance_value,
     ))
     row = cur.fetchone()
     return {
@@ -170,7 +177,7 @@ def get_shipment_detail(shipment_id: str, user=Depends(get_current_user), cur=De
 
     cur.execute("""
         SELECT i.id, i.line_no, i.description, i.quantity, i.uom, i.unit_price, i.total_price_cif, i.status,
-               i.hs_code_proposed, i.confidence_score, i.is_approved, i.hs_code_accepted
+               i.hs_code_proposed, i.confidence_score, i.is_approved, i.hs_code_accepted, i.approval_origin
         FROM shipment_items i
         WHERE i.shipment_id = %s
         ORDER BY i.line_no ASC;
@@ -190,7 +197,7 @@ def get_shipment_detail(shipment_id: str, user=Depends(get_current_user), cur=De
             has_rejected = True
         if it_status == "out_of_scope":
             has_out_of_scope = True
-        if not is_appr or it_status in ("draft", "needs_clarification") or not it[8]:
+        if not is_appr or it_status in ("draft", "needs_clarification") or not (it[11] or it[8]):
             all_classified = False
 
         ev = evidence_by_item.get(it_id, {})
@@ -218,6 +225,7 @@ def get_shipment_detail(shipment_id: str, user=Depends(get_current_user), cur=De
             "hs_code_proposed": it[8],
             "confidence_score": float(it[9]) if it[9] is not None else None,
             "is_approved": is_appr,
+            "approval_origin": it[12],
             "rationale": rat,
             "justification": rat,
             "citations": cits,
@@ -284,7 +292,8 @@ def get_shipment_detail(shipment_id: str, user=Depends(get_current_user), cur=De
         )
     ]
     cur.execute("""SELECT title,status FROM checklist_items
-        WHERE shipment_id=%s AND company_id=%s AND required_before_submission=true""",
+        WHERE shipment_id=%s AND company_id=%s AND required_before_submission=true
+          AND requirement_code NOT IN ('INVOICE','PACKING_LIST','BL')""",
         (int(shipment_id), int(user["company_id"])))
     required_docs.extend({"type": row[0], "status": row[1]} for row in cur.fetchall())
     cur.execute("""SELECT COUNT(*) FROM review_tasks WHERE shipment_id=%s AND company_id=%s
@@ -314,7 +323,7 @@ def get_shipment_detail(shipment_id: str, user=Depends(get_current_user), cur=De
         "supplier_name": s_row[4],
         "supplier_email": s_row[5],
         "currency": s_row[6],
-        "total_invoice_amount": float(s_row[7]) if s_row[7] else 0.0,
+        "total_invoice_amount": sum(item["total_price"] for item in items),
         "status": s_row[8],
         "readiness_status": readiness_eval.status.value,
         "is_ready": readiness_eval.ready and s_row[9] == "ready",
@@ -397,6 +406,22 @@ def mark_shipment_submitted(shipment_id: str, user=Depends(get_current_user), cu
     return {"id": str(res[0]), "status": res[1], "submitted_at": res[2].isoformat()}
 
 
+@router.post("/{shipment_id}/mark-arrived")
+def mark_shipment_arrived(shipment_id: int, user=Depends(get_current_user), cur=Depends(get_db_cursor)):
+    scope = (shipment_id, int(user["company_id"]))
+    cur.execute("SELECT status,arrived_at FROM shipments WHERE id=%s AND company_id=%s FOR UPDATE", scope)
+    row = cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Kiriman tidak ditemukan")
+    if row[0] not in ("submitted", "arrived"):
+        raise HTTPException(status_code=409, detail="Kiriman harus tercatat sudah diajukan.")
+    if row[0] == "submitted":
+        cur.execute("""UPDATE shipments SET status='arrived',arrived_at=NOW(),updated_at=NOW()
+            WHERE id=%s AND company_id=%s RETURNING status,arrived_at""", scope)
+        row = cur.fetchone()
+    return {"id": str(shipment_id), "status": row[0], "arrived_at": row[1].isoformat() if row[1] else None}
+
+
 @router.post("/{shipment_id}/upload")
 @router.post("/{shipment_id}/documents")
 async def upload_document(
@@ -438,7 +463,7 @@ async def upload_document(
 
     os.makedirs(settings.STORAGE_VAULT_PATH, exist_ok=True)
     doc_uuid = str(uuid.uuid4())
-    safe_name = f"{doc_uuid}_{file.filename}"
+    safe_name = f"{doc_uuid}.pdf"
     file_path = os.path.join(settings.STORAGE_VAULT_PATH, safe_name)
 
     with open(file_path, "wb") as f:
@@ -640,7 +665,7 @@ def list_shipment_runs(
     verify_company_access(int(s_row[0]), int(user["company_id"]))
 
     cur.execute("""
-        SELECT id, status, outcome, total_tokens, cost_usd, started_at, ended_at, created_at
+        SELECT id, status, outcome, total_tokens, cost_usd, started_at, ended_at
         FROM agent_runs
         WHERE shipment_id = %s AND company_id = %s
         ORDER BY id DESC;
@@ -656,7 +681,7 @@ def list_shipment_runs(
             "cost_usd": float(r[4]) if r[4] is not None else None,
             "started_at": r[5].isoformat() if r[5] else None,
             "ended_at": r[6].isoformat() if r[6] else None,
-            "created_at": r[7].isoformat() if r[7] else None,
+            "created_at": r[5].isoformat() if r[5] else None,
         })
     return {"runs": runs, "data": runs}
 
@@ -680,28 +705,12 @@ def get_shipment_pib(
         raise HTTPException(status_code=404, detail="Kiriman tidak ditemukan")
 
     cur.execute("""
-        SELECT cif_idr, bm_percentage, bm_idr, ppn_percentage, ppn_idr, pph_percentage, pph_idr, total_duties_idr
+        SELECT SUM(cif_idr), SUM(bm_idr), SUM(ppn_idr), SUM(pph_idr), SUM(total_duties_idr)
         FROM duty_calculations
-        WHERE shipment_id = %s AND is_current = true
-        ORDER BY id DESC LIMIT 1;
-    """, (int(shipment_id),))
-    d_row = cur.fetchone()
-
-    cif_val = float(d_row[0]) if d_row and d_row[0] is not None else 0.0
-    bm_val = float(d_row[2]) if d_row and d_row[2] is not None else 0.0
-    ppn_val = float(d_row[4]) if d_row and d_row[4] is not None else 0.0
-    pph_val = float(d_row[6]) if d_row and d_row[6] is not None else 0.0
-    total_val = float(d_row[7]) if d_row and d_row[7] is not None else 0.0
-
-    if total_val == 0.0 and len(s_row) > 8 and s_row[8] and float(s_row[8]) > 0.0:
-        from decimal import Decimal
-        from src.domain.duty import DutyInput, calculate_import_duties
-        calc = calculate_import_duties(DutyInput(cif_idr=Decimal(str(s_row[8]))))
-        cif_val = float(calc.cif_idr)
-        bm_val = float(calc.bm_idr)
-        ppn_val = float(calc.ppn_idr)
-        pph_val = float(calc.pph_idr)
-        total_val = float(calc.total_duties_idr)
+        WHERE shipment_id=%s AND company_id=%s AND is_current=true;
+    """, (int(shipment_id), int(user["company_id"])))
+    totals = [float(value) if value is not None else None for value in cur.fetchone()]
+    cif_val, bm_val, ppn_val, pph_val, total_val = totals
 
     pib_data = {
         "shipment_id": str(s_row[0]),
@@ -709,7 +718,7 @@ def get_shipment_pib(
         "importer_name": s_row[6],
         "importer_npwp": s_row[7],
         "supplier_name": s_row[2],
-        "origin_country": "CN",
+        "origin_country": None,
         "currency": s_row[3],
         "status": s_row[4],
         "readiness_status": s_row[5],

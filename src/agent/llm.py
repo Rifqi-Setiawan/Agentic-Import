@@ -40,9 +40,13 @@ def get_llm_client() -> httpx.Client:
 def call_llm(messages: list[dict], model: str | None = None, stream=False, temperature=None, **kwargs: Any):
     if stream:
         raise ValueError("The structured model adapter requires stream=False.")
+    if not (model or settings.LLM_MODEL):
+        raise LLMInvocationError("LLM_MODEL belum dikonfigurasi.")
     payload = {"model": model or settings.LLM_MODEL, "messages": messages,
                "temperature": settings.LLM_TEMPERATURE if temperature is None else temperature,
                "max_tokens": 4000, **kwargs, "stream": False}
+    primary = payload["model"]
+    fallback = settings.LLM_MODEL_FALLBACK
     for attempt in range(3):
         try:
             with get_llm_client() as client:
@@ -59,14 +63,22 @@ def call_llm(messages: list[dict], model: str | None = None, stream=False, tempe
             return {"content": message.get("content") or "", "message": message,
                     "prompt_tokens": usage.get("prompt_tokens"), "completion_tokens": usage.get("completion_tokens"),
                     "total_tokens": usage.get("total_tokens"), "model": body.get("model", payload["model"]),
-                    "raw": body, "attempts": attempt + 1}
+                    "raw": body, "attempts": attempt + 1, "used_fallback": payload["model"] != primary}
         except httpx.HTTPStatusError as error:
             status = error.response.status_code
             if status not in (429, 500, 502, 503, 504) or attempt == 2:
                 raise LLMInvocationError(f"9Router gagal (HTTP {status}). Coba ulang setelah layanan pulih.", status) from error
+            if status == 429 and fallback and fallback != payload["model"]:
+                payload["model"] = fallback
+                continue
         except (httpx.RequestError, ValueError) as error:
             if attempt == 2:
                 raise LLMInvocationError("Koneksi atau format respons 9Router gagal setelah percobaan ulang.") from error
+        except LLMInvocationError:
+            if attempt == 2:
+                raise
+        if attempt == 1 and fallback:
+            payload["model"] = fallback
         if attempt < 2:
             time.sleep(2 ** attempt)
     raise LLMInvocationError("9Router belum tersedia.")

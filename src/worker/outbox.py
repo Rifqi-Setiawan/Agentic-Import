@@ -106,13 +106,20 @@ def process_outbox_message(
     target_port = smtp_port or settings.SMTP_PORT
 
     import smtplib
+    import ssl
     from email.message import EmailMessage
 
     data_phase = False
     try:
+        if (settings.SMTP_USERNAME or settings.SMTP_PASSWORD) and not settings.SMTP_STARTTLS:
+            raise ValueError("Autentikasi SMTP memerlukan STARTTLS.")
         with smtplib.SMTP(host=target_host, port=target_port, timeout=5.0) as server:
+            if settings.SMTP_STARTTLS:
+                server.starttls(context=ssl.create_default_context())
+            if settings.SMTP_USERNAME:
+                server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
             em = EmailMessage()
-            em["From"] = "demo@imporjaga.id"
+            em["From"] = settings.SMTP_FROM
             em["To"] = recipient_clean
             em["Subject"] = subject or "Pemberitahuan ImporJaga"
             em.set_content(body or "")
@@ -133,7 +140,7 @@ def process_outbox_message(
                 delivery_status=OutboxStatus.SENT,
                 status="sent",
                 auto_retry_scheduled=False,
-                log_message="Email terkirim dan diterima oleh server SMTP sandbox.",
+                log_message="Pesan diterima oleh server SMTP.",
             )
     except (TimeoutError, smtplib.SMTPServerDisconnected) as exc:
         if data_phase:

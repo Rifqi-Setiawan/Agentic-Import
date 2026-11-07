@@ -74,7 +74,9 @@ async def sse_run_stream(run_id: str, request: Request, user=Depends(get_current
                             }, ensure_ascii=False),
                         }
 
-                    stream_cur.execute("SELECT status, outcome FROM agent_runs WHERE id = %s;", (run_int_id,))
+                    stream_cur.execute("""SELECT status, outcome, total_tokens,
+                        EXTRACT(EPOCH FROM (ended_at-started_at))
+                        FROM agent_runs WHERE id=%s""", (run_int_id,))
                     run_status = stream_cur.fetchone()
                     if run_status and run_status[0] in ("succeeded", "failed"):
                         yield {
@@ -84,6 +86,8 @@ async def sse_run_stream(run_id: str, request: Request, user=Depends(get_current
                                 "run_id": run_id,
                                 "status": run_status[0],
                                 "outcome": run_status[1],
+                                "total_tokens": run_status[2],
+                                "duration_seconds": float(run_status[3]) if run_status[3] is not None else None,
                             }),
                         }
                         break

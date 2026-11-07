@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
+from src.core.config import PROJECT_ROOT, settings
 from src.core.database import SessionLocal, init_db
 from src.core.security import get_password_hash
 from src.models.entities import (
@@ -15,6 +16,7 @@ from src.models.entities import (
     DutyCalculation,
     HSCode,
     LartasRuleEntity,
+    ReviewTask,
     Shipment,
     ShipmentItem,
     User,
@@ -61,7 +63,6 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                     ChecklistItem,
                     Job,
                     OutboxMessage,
-                    ReviewTask,
                 )
                 db.query(ChecklistItem).filter(ChecklistItem.shipment_id.in_(demo_ids)).delete(synchronize_session=False)
                 db.query(DutyCalculation).filter(DutyCalculation.shipment_id.in_(demo_ids)).delete(synchronize_session=False)
@@ -78,9 +79,9 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
 
         # 2. Users (3 Roles under Resolved Company)
         users_data = [
-            ("staf@mitrakemas.co.id", "Ahmad Staf Impor", "importer_staff"),
-            ("reviewer@mitrakemas.co.id", "Budi Ahli Kepabeanan", "ppjk_reviewer"),
-            ("admin@mitrakemas.co.id", "Siti Admin Logistik", "admin"),
+            ("staf@mitrakemas.example", "Ahmad Staf Impor", "importer_staff"),
+            ("reviewer@mitrakemas.example", "Budi Ahli Kepabeanan", "ppjk_reviewer"),
+            ("admin@mitrakemas.example", "Siti Admin Logistik", "admin"),
         ]
         for email, name, role in users_data:
             u = db.query(User).filter_by(email=email).first()
@@ -96,7 +97,7 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                 db.add(u)
 
         # 3. Official HS Codes (Chapters 33, 61, 62, 84, 85 from data/seed/hs_codes.csv)
-        hs_csv = "/srv/hermes-control/services/agentic-import/data/seed/hs_codes.csv"
+        hs_csv = PROJECT_ROOT / "data/seed/hs_codes.csv"
         if os.path.exists(hs_csv):
             with open(hs_csv, encoding="utf-8") as f:
                 reader = csv.DictReader(f)
@@ -171,7 +172,7 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                 company_id=comp.id,
                 shipment_number="MKN-011",
                 supplier_name="Shenzhen Packaging & Automation Co., Ltd.",
-                supplier_email="tim-impor@mitrakemas.co.id",
+                supplier_email="tim-impor@mitrakemas.example",
                 bl_number="OOCL-SZ-2026-9921",
                 invoice_number="INV-2026-1104-01",
                 currency="USD",
@@ -190,7 +191,7 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                 (1, "Mesin Sealing Karton Otomatis Model SK-500", 1, 1500.0, "8422.30.00", 0.94, "low", "approved", True),
                 (2, "Motor Induksi AC 3-Phase 1.5 kW 380V IE3", 2, 350.0, "8501.52.19", 0.92, "low", "approved", True),
                 (3, "Control Panel Box PLC Siemens S7-1200", 1, 800.0, "8537.10.19", 0.90, "low", "approved", True),
-                (4, "Pneumatic Control Valve Actuator (Katup Ambigu)", 4, 180.0, "8481.80.90", 0.65, "medium", "needs_clarification", False),
+                (4, "Pneumatic Control Valve Actuator (Katup Ambigu)", 4, 180.0, "8481.80.99", 0.65, "medium", "needs_clarification", False),
                 (5, "Inductive Proximity Sensor Switch NPN NO M12", 20, 15.0, "8543.70.90", 0.88, "low", "classified", False),
             ]
             for l_no, desc, qty, price, hs, conf, risk, st, approved in items_mkn11:
@@ -201,7 +202,7 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                     description=desc,
                     quantity=Decimal(str(qty)),
                     unit_price=Decimal(str(price)),
-                    total_price_cif=Decimal(str(qty * price * 16000)),
+                    total_price_cif=Decimal(str(qty * price)),
                     hs_code_proposed=hs,
                     hs_code_accepted=hs if approved else None,
                     confidence_score=Decimal(str(conf)),
@@ -256,7 +257,7 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                 company_id=comp.id,
                 doc_type="INVOICE",
                 file_name="Invoice_MKN011_Shenzhen.pdf",
-                file_path="/srv/hermes-control/services/agentic-import/data/vault/Invoice_MKN011_Shenzhen.pdf",
+                file_path=os.path.join(settings.STORAGE_VAULT_PATH, "Invoice_MKN011_Shenzhen.pdf"),
                 file_size=425120,
                 status="provided",
             ))
@@ -265,7 +266,7 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                 company_id=comp.id,
                 doc_type="PACKING_LIST",
                 file_name="PackingList_MKN011.pdf",
-                file_path="/srv/hermes-control/services/agentic-import/data/vault/PackingList_MKN011.pdf",
+                file_path=os.path.join(settings.STORAGE_VAULT_PATH, "PackingList_MKN011.pdf"),
                 file_size=212400,
                 status="provided",
             ))
@@ -274,7 +275,7 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                 company_id=comp.id,
                 doc_type="BL",
                 file_name="BillOfLading_OOCL_9921.pdf",
-                file_path="/srv/hermes-control/services/agentic-import/data/vault/BillOfLading_OOCL_9921.pdf",
+                file_path=os.path.join(settings.STORAGE_VAULT_PATH, "BillOfLading_OOCL_9921.pdf"),
                 file_size=315600,
                 status="provided",
             ))
@@ -283,7 +284,7 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                 company_id=comp.id,
                 doc_type="DATASHEET",
                 file_name="Datasheet_Pneumatic_Valve_Sample.pdf",
-                file_path="/srv/hermes-control/services/agentic-import/data/vault/Datasheet_Pneumatic_Valve_Sample.pdf",
+                file_path=os.path.join(settings.STORAGE_VAULT_PATH, "Datasheet_Pneumatic_Valve_Sample.pdf"),
                 file_size=154000,
                 status="missing",
             ))
@@ -295,7 +296,7 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                 company_id=comp.id,
                 shipment_number="MKN-007",
                 supplier_name="Global Valve Technologies Inc.",
-                supplier_email="tim-impor@mitrakemas.co.id",
+                supplier_email="tim-impor@mitrakemas.example",
                 bl_number="MEDU-2026-7788",
                 invoice_number="INV-GVT-007",
                 currency="USD",
@@ -315,9 +316,9 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                 description="Industrial Gate Valves 8481",
                 quantity=Decimal(10),
                 unit_price=Decimal("250.0"),
-                total_price_cif=Decimal("40000000.00"),
-                hs_code_proposed="8481.80.90",
-                hs_code_accepted="8481.80.90",
+                total_price_cif=Decimal("2500.00"),
+                hs_code_proposed="8481.80.99",
+                hs_code_accepted="8481.80.99",
                 confidence_score=Decimal("0.95"),
                 risk_level="low",
                 status="approved",
@@ -331,7 +332,7 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                 company_id=comp.id,
                 shipment_number="MKN-008",
                 supplier_name="Hydraulic & Pneumatic Systems Ltd.",
-                supplier_email="tim-impor@mitrakemas.co.id",
+                supplier_email="tim-impor@mitrakemas.example",
                 bl_number="MAEU-2026-8899",
                 invoice_number="INV-HPS-008",
                 currency="USD",
@@ -352,7 +353,7 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                 description="High Pressure Regulating Valves 8481",
                 quantity=Decimal(15),
                 unit_price=Decimal("200.0"),
-                total_price_cif=Decimal("48000000.00"),
+                total_price_cif=Decimal("3000.00"),
                 hs_code_proposed="8481.10.99",
                 hs_code_accepted="8481.10.99",
                 confidence_score=Decimal("0.96"),
@@ -368,7 +369,7 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                 company_id=comp.id,
                 shipment_number="MKN-003",
                 supplier_name="Tokyo Valve Corporation",
-                supplier_email="tim-impor@mitrakemas.co.id",
+                supplier_email="tim-impor@mitrakemas.example",
                 bl_number="ONE-2026-3344",
                 invoice_number="INV-TVC-003",
                 currency="USD",
@@ -390,7 +391,7 @@ def seed_data(db: Session = None, reset: bool = False, target_company_id: int | 
                 description="Brass Ball Valves 8481",
                 quantity=Decimal(50),
                 unit_price=Decimal("40.0"),
-                total_price_cif=Decimal("32000000.00"),
+                total_price_cif=Decimal("2000.00"),
                 hs_code_proposed="8481.80.11",
                 hs_code_accepted="8481.80.11",
                 confidence_score=Decimal("0.98"),

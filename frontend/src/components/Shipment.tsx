@@ -289,7 +289,9 @@ export function Shipment({
                 ))}
                 <p className="muted">
                   Keputusan:{" "}
-                  {item.is_approved ? "Sudah disetujui" : "Belum disetujui"}.
+                  {item.approval_origin === "auto_rule_gate"
+                    ? "Disetujui otomatis oleh agent"
+                    : item.is_approved ? "Sudah disetujui" : "Belum disetujui"}.
                   Periksa review sebelum pengajuan.
                 </p>
               </details>

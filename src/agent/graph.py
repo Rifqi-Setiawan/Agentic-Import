@@ -12,6 +12,7 @@ class ShipmentAnalysisState(TypedDict, total=False):
     run_id: str
     mode: str
     event_type: str
+    regulation_id: int | None
     input_version: int
     target_item_ids: list[str] | None
     steps_log: list[dict[str, Any]]
@@ -19,6 +20,7 @@ class ShipmentAnalysisState(TypedDict, total=False):
     items: list[dict[str, Any]]
     documents: list[dict[str, Any]]
     plan: dict[str, Any]
+    proposals: dict[int, dict[str, Any]]
     outcome: str
     readiness_status: str
 
@@ -44,7 +46,14 @@ def build_analysis_graph():
         graph.add_node(node.__name__, guarded(node))
     graph.set_entry_point(nodes[0].__name__)
     for previous, following in zip(nodes, nodes[1:]):
-        graph.add_edge(previous.__name__, following.__name__)
+        if previous is analysis.load_context:
+            graph.add_conditional_edges(
+                previous.__name__,
+                lambda state: "compliance" if state.get("mode") == "recalc_only" else "extract_documents",
+                {"compliance": "compliance", "extract_documents": "extract_documents"},
+            )
+        else:
+            graph.add_edge(previous.__name__, following.__name__)
     graph.add_edge(nodes[-1].__name__, END)
     # Durable business checkpoints are committed by each node. A recovered worker
     # reruns the pass idempotently; this MVP does not claim LangGraph PostgresSaver.
