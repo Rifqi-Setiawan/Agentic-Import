@@ -19,6 +19,7 @@ import { Badge, Card, Empty, Field } from "./components/Common";
 import { Shipment } from "./components/Shipment";
 import { WorkQueue, Reference } from "./components/WorkQueue";
 import { Dashboard } from "./components/Dashboard";
+import { ArthaBrand } from "./components/ArthaBrand";
 
 const DEMO = [
   ["Staf impor", "staf@mitrakemas.example"],
@@ -135,12 +136,7 @@ export default function App() {
     return (
       <div className="login">
         <section>
-          <div className="brand">
-            <ShieldCheck />
-            <span>
-              Artha<small>IMPORT, WITH CONFIDENCE.</small>
-            </span>
-          </div>
+          <ArthaBrand variant="login" />
           <span className="eyebrow">DARI INVOICE KE PEMERIKSAAN IMPOR</span>
           <h1>
             Kepatuhan lebih jelas.
@@ -222,12 +218,7 @@ export default function App() {
   return (
     <div className="shell">
       <aside>
-        <div className="brand">
-          <ShieldCheck />
-          <span>
-            Artha<small>IMPORT WORKSPACE</small>
-          </span>
-        </div>
+        <ArthaBrand variant="sidebar" />
         <div className="company-card">
           <span className="company-icon">
             <Building2 size={17} />

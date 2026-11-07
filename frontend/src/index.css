@@ -119,10 +119,15 @@ small {
   font-weight: 750;
   letter-spacing: -0.5px;
 }
-.brand svg {
-  color: #13ae70;
-  width: 30px;
-  height: 30px;
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  flex: none;
+}
+.brand-logo {
+  width: 185px;
+  max-width: 100%;
+  height: auto;
 }
 .brand small {
   display: block;
